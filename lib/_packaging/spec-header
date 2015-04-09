@@ -1,0 +1,5 @@
+/**---------------------------------------------------------------------------------------------------------------------
+ * tgi-interface-createjs/lib/_packaging/spec-header
+ **/
+  var CreateJSInterface = TGI.INTERFACE.CREATEJS().CreateJSInterface;
+  spec.mute(true);
