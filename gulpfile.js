@@ -15,8 +15,9 @@ var libFiles = [
   'node_modules/tgi-core/dist/tgi.core.chunk.js',
   'lib/tgi-interface-createjs.lib.js',
   'lib/tgi-interface-createjs.source.js',
-  //'lib/tgi-interface-createjs-navigation.source.js',
-  //'lib/tgi-interface-createjs-queries.source.js',
+  'lib/tgi-interface-createjs-stage.source.js',
+  'lib/tgi-interface-createjs-navigation.source.js',
+  'lib/tgi-interface-createjs-queries.source.js',
   //'lib/tgi-interface-createjs-views.source.js',
   'lib/_packaging/lib-footer'
 ];

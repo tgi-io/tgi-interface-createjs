@@ -388,7 +388,7 @@ function Command(args) {
   args = args || {};
   var i;
   var unusedProperties = getInvalidProperties(args,
-    ['name', 'description', 'type', 'contents', 'scope', 'timeout', 'theme', 'icon', 'bucket', 'presentationMode']);
+    ['name', 'description', 'type', 'contents', 'scope', 'timeout', 'theme', 'icon', 'bucket', 'presentationMode','location','images']);
   var errorList = [];
   for (i = 0; i < unusedProperties.length; i++) errorList.push('invalid property: ' + unusedProperties[i]);
   if (errorList.length > 1) throw new Error('error creating Command: multiple errors');
@@ -2627,7 +2627,6 @@ TGI.INTERFACE.CREATEJS = function () {
  * Constructor
  */
 var CreateJSInterface = function (args) {
-  console.log('CreateJSInterface!!!');
   if (false === (this instanceof Interface)) throw new Error('new operator required');
   args = args || {};
   args.name = args.name || '(unnamed)';
@@ -2657,7 +2656,7 @@ CreateJSInterface.prototype.canMock = function () {
   return false;
 };
 CreateJSInterface.prototype.start = function (application, presentation, callBack) {
-  console.log('CreateJSInterface start');
+  var self = this;
   if (!(application instanceof Application)) throw new Error('Application required');
   if (!(presentation instanceof Presentation)) throw new Error('presentation required');
   if (typeof callBack != 'function') throw new Error('callBack required');
@@ -2666,6 +2665,9 @@ CreateJSInterface.prototype.start = function (application, presentation, callBac
   this.startCallback = callBack;
   if (!this.vendor) throw new Error('Error initializing CreateJS');
   try {
+    if (!CreateJSInterface._resources) {
+      CreateJSInterface._resources = this.vendor.resources;
+    }
     if (!CreateJSInterface._createjs) {
       CreateJSInterface._createjs = this.vendor.createjs;
     }
@@ -2678,35 +2680,205 @@ CreateJSInterface.prototype.start = function (application, presentation, callBac
    * Add needed html to DOM
    */
   this.doc = {}; // Keep DOM element IDs here
+  this.createStage(function () { // callback after resources loaded
+    if (self.presentation.get('contents').length)
+      self.createNavigation();
+    //this.htmlViews();
+  });
+};
+
+/**---------------------------------------------------------------------------------------------------------------------
+ * tgi-interface-createjs/lib/tgi-interface-createjs-stage.source.js
+ */
+CreateJSInterface.prototype.createStage = function (callback) {
+  var createJSInterface = this;
+  var createjs = CreateJSInterface._createjs;
+
+  /**
+   * All the world is a stage
+   */
   this.doc.stage = new createjs.Stage(this.vendor.canvasID);
 
-  this.doc.debugText = new createjs.Text("this.doc.debugText", "24px Arial", "#ffff00");
-  this.doc.debugText.x = 4;
-  this.doc.debugText.y = this.doc.stage.canvas.height-28;
+  /**
+   * Debug text
+   */
+  var x = 4;
+  var y = this.doc.stage.canvas.height - 28;
+
+  this.doc.debugPanel = new createjs.Shape(new createjs.Graphics().beginFill("#777").drawRect(0, y, this.doc.stage.canvas.width, 28));
+  this.doc.debugPanel.alpha = 0.5; // translucent rectangle in back of text
+  this.doc.stage.addChild(this.doc.debugPanel);
+
+  this.doc.debugText = new createjs.Text("this.doc.debugText", "24px Arial", "#ffff00"); // text
+  this.doc.debugText.x = x;
+  this.doc.debugText.y = y;
   this.doc.stage.addChild(this.doc.debugText);
-  this.doc.stage.update();
 
+  ///**
+  // * Keyboard handler
+  // */
+  //document.getElementById(this.vendor.canvasID).onkeydown = function() {};
 
+  /**
+   * Ticker update method
+   */
+  createjs.Ticker.setFPS(60);
+  createjs.Ticker.addEventListener("tick", function (event) {
+    createJSInterface.doc.stage.update(event);
+  });
 
-  //if (this.presentation.get('contents').length)
-  //  this.htmlNavigation();
-  //this.htmlViews();
+  /**
+   * Create a manifest for preloadJS
+   */
+
+  getResouceItems(CreateJSInterface._resources);
+  function getResouceItems(resources) {
+    for (var resourceName in resources) {
+      if (resources.hasOwnProperty(resourceName) && resourceName[0] != '_') {
+        var resource = resources[resourceName];
+        console.log(resourceName + ' ' + resource._type);
+        if (resource._type == 'Folder')
+          getResouceItems(resource);
+      }
+    }
+  };
+
+  /*
+   var manifest = [{
+   src: "Plday_up.png",
+   id: "Play_up"
+   }, {
+   src: "Play_down.png",
+   id: "Play_down"
+   }, {
+   src: "M-GameBG.mp3",
+   id: "M-GameBG"
+   }];
+   for (var i = 1; i <= 54; i++) {
+   manifest.push({src: "Cards/face" + (i > 9 ? i : '0' + i) + ".png"})
+   }
+   var preload = new createjs.LoadQueue(true);
+   preload.installPlugin(createjs.Sound);
+   preload.on("fileload", function (event) {
+   console.log("loaded " + event.item.type + ': ' + event.item.src);
+   });
+   preload.on("progress", function (event) {
+   createJSInterface.info((preload.progress * 100 | 0) + " % Loaded");
+   });
+   preload.on("complete", function (event) {
+   console.log("Finished Loading Assets");
+   callback();
+   });
+   preload.on("error", function (event,err) {
+   console.error("Error loading", event.data.src);
+   });
+   preload.loadManifest(manifest, true, 'assets/');
+
+   */
 
 };
-/**
- * DOM helper
+/**---------------------------------------------------------------------------------------------------------------------
+ * tgi-interface-createjs/lib/tgi-interface-createjs-navigation.source.js
  */
-CreateJSInterface.addEle = function (parent, tagName, className, attributes) {
-  var ele = document.createElement(tagName);
-  if (className && className.length)
-    ele.className = className;
-  if (attributes)
-    for (var i in attributes)
-      if (attributes.hasOwnProperty(i)) ele.setAttribute(i, attributes[i]);
-  parent.appendChild(ele);
-  return ele;
-};
+(function () { // for closure
+               //  var createjs = CreateJSInterface._createjs;
 
+  var col = 20;
+
+  CreateJSInterface.prototype.createNavigation = function () {
+    var menuContents = this.presentation.get('contents');
+    for (var menuItem in menuContents) if (menuContents.hasOwnProperty(menuItem)) {
+      this.addNavButton(menuContents[menuItem]);
+    }
+  };
+
+  CreateJSInterface.prototype.addNavButton = function (action) {
+    var self = this;
+    var navButton = this.doc.stage.addChild(new NavButton(self, action.name, "#777", function () {
+      self.dispatch(new Request({type: 'Command', command: action}));
+    }));
+    if (action.location) {
+      navButton.x = action.location.x;
+      navButton.y = action.location.y;
+    } else {
+      navButton.x = col;
+      navButton.y = 20;
+      col += (navButton._widthWas + 4);
+    }
+  };
+
+  /**
+   * NavButton via createjs inheritance (createjs.promote below)
+   */
+  function NavButtonContainer(createJSInterface, label, color, callback) {
+
+    this.Container_constructor();
+    this.color = color;
+    this.label = label;
+    this.name = label;
+    this.setup();
+    this._tgiCallback = callback;
+    this._createJSInterface = createJSInterface;
+  }
+
+  var p = createjs.extend(NavButtonContainer, createjs.Container);
+  p.setup = function () {
+    /**
+     * Button Text
+     */
+    var text = new createjs.Text(this.label, "24px Arial", "#111");
+    text.textBaseline = "top";
+    text.textAlign = "center";
+    this._widthWas = text.getMeasuredWidth() + 30;    // Size container base
+    this._heightWas = text.getMeasuredHeight() + 28;
+    text.x = this._widthWas / 2; // Center
+    text.y = 12;
+
+    var background = new createjs.Shape();
+    background.graphics.beginFill('#000').drawRoundRect(1, 1, this._widthWas, this._heightWas, 10);
+    background.graphics.beginFill(this.color).drawRoundRect(0, 0, this._widthWas - 1, this._heightWas - 1, 10);
+    this.addChild(background, text);
+    this.mouseChildren = false;
+    this.on("click", function (event) {
+      this._tgiCallback();
+    });
+    this.on("mousedown", function (event) {
+      this._pressed = false;
+      this._shiftPressed = false;
+      this._moved = false;
+      if (event.nativeEvent.shiftKey) {
+        this._shiftPressed = true;
+        this._createJSInterface.info('x: ' + this.x  + ', y: ' + this.y);
+      } else {
+        this._pressed = true;
+        this.alpha = 0.5;
+      }
+    });
+    this.on("pressmove", function (event) {
+      if (this._shiftPressed) {
+        this._moved = true;
+        event.currentTarget.x = event.stageX;
+        event.currentTarget.y = event.stageY;
+        this._createJSInterface.info('x: ' + this.x  + ', y: ' + this.y);
+      }
+    });
+    this.on("pressup", function (event) {
+      if (this._pressed) {
+        this.alpha = 1;
+        this._pressed = false;
+      }
+    });
+  };
+  var NavButton = createjs.promote(NavButtonContainer, "Container");
+
+}());
+/**---------------------------------------------------------------------------------------------------------------------
+ * tgi-interface-createjs/lib/tgi-interface-createjs-queries.source.js
+ */
+
+CreateJSInterface.prototype.info = function (text) {
+  this.doc.debugText.text  = text;
+};
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/_packaging/lib-footer
  **/
