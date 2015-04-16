@@ -18,7 +18,7 @@ var libFiles = [
   'lib/tgi-interface-createjs-stage.source.js',
   'lib/tgi-interface-createjs-navigation.source.js',
   'lib/tgi-interface-createjs-queries.source.js',
-  //'lib/tgi-interface-createjs-views.source.js',
+  'lib/tgi-interface-createjs-panels.source.js',
   'lib/_packaging/lib-footer'
 ];
 

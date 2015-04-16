@@ -2686,6 +2686,28 @@ CreateJSInterface.prototype.start = function (application, presentation, callBac
     //this.htmlViews();
   });
 };
+CreateJSInterface.prototype.dispatch = function (request, response) {
+  if (false === (request instanceof Request)) throw new Error('Request required');
+  if (response && typeof response != 'function') throw new Error('response callback is not a function');
+  var requestHandled = false;
+  try {
+    if (this.application) {
+      if (request.type == 'Command' && request.command.type == 'Presentation') {
+        this.activatePanel(request.command);
+        requestHandled = true;
+      } else {
+        requestHandled = !this.application.dispatch(request);
+      }
+    }
+    if (!requestHandled && this.startcallback) {
+      this.startcallback(request);
+    }
+  } catch (e) {
+    if (this.startcallback) {
+      this.startcallback(e);
+    }
+  }
+};
 
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/tgi-interface-createjs-stage.source.js
@@ -2702,22 +2724,26 @@ CreateJSInterface.prototype.createStage = function (callback) {
   /**
    * Debug text
    */
-  var x = 4;
-  var y = this.doc.stage.canvas.height - 28;
-
-  this.doc.debugPanel = new createjs.Shape(new createjs.Graphics().beginFill("#777").drawRect(0, y, this.doc.stage.canvas.width, 28));
+  this.doc.debugText = new createjs.Text("this.doc.debugText", "32px Arial", "#ffff00"); // text
+  var height = this.doc.debugText.getMeasuredHeight() + 6;
+  var top = this.doc.stage.canvas.height - height;
+  this.doc.debugPanel = new createjs.Shape(new createjs.Graphics().beginFill("#777").drawRect(0, top, this.doc.stage.canvas.width, height));
   this.doc.debugPanel.alpha = 0.5; // translucent rectangle in back of text
   this.doc.stage.addChild(this.doc.debugPanel);
 
-  this.doc.debugText = new createjs.Text("this.doc.debugText", "24px Arial", "#ffff00"); // text
-  this.doc.debugText.x = x;
-  this.doc.debugText.y = y;
+  this.doc.debugText.x = 4;
+  this.doc.debugText.y = top;
   this.doc.stage.addChild(this.doc.debugText);
+  //this._heightWas = text.getMeasuredHeight() + 28;
 
-  ///**
-  // * Keyboard handler
-  // */
-  //document.getElementById(this.vendor.canvasID).onkeydown = function() {};
+  /**
+   * Keyboard handler
+   */
+  document.onkeydown = function (event) {
+    var k = event ? event.which : window.event.keyCode;
+    createJSInterface.info('You hit ' + k);
+    // event.preventDefault(); alt R hosed with this in chrome
+  };
 
   /**
    * Ticker update method
@@ -2728,20 +2754,67 @@ CreateJSInterface.prototype.createStage = function (callback) {
   });
 
   /**
-   * Create a manifest for preloadJS
+   * Recursively walk thru resources & create a manifest
    */
-
-  getResouceItems(CreateJSInterface._resources);
-  function getResouceItems(resources) {
+  var manifest = [];
+  getResourceItems(CreateJSInterface._resources, '');
+  function getResourceItems(resources, path) {
     for (var resourceName in resources) {
       if (resources.hasOwnProperty(resourceName) && resourceName[0] != '_') {
         var resource = resources[resourceName];
-        console.log(resourceName + ' ' + resource._type);
-        if (resource._type == 'Folder')
-          getResouceItems(resource);
+        var filePath = (path ? path + '/' : '' ) + resourceName;
+        //console.log(resourceName + ' ' + resource._type);
+        if (resource._type == 'Folder') {
+          getResourceItems(resource, filePath);
+        } else {
+          if (undefined === resource.firstFrame) {
+            filePath += '.' + resource._type.toLowerCase();
+            console.log(filePath);
+            manifest.push({src: filePath, _tgiSource: resource});
+          } else {
+            for (var i = resource.firstFrame; i <= resource.lastFrame; i++) {
+              var frame = '' + i;
+              if (resource.zeroPad)
+                frame = lpad(frame, resource.zeroPad, '0');
+              var framePath = filePath + frame + '.' + resource._type.toLowerCase();
+              manifest.push({src: framePath, _tgiSource: resource});
+            }
+          }
+        }
       }
     }
-  };
+  }
+
+  /**
+   *  use preloadJS to load assets
+   */
+  var preload = new createjs.LoadQueue(true);
+  var lastFile = 'loading assets...';
+  var lastProgress = '0 %';
+  createJSInterface.info(lastProgress + lastFile);
+  preload.installPlugin(createjs.Sound);
+  preload.on("fileload", function (event) {
+    event.item._tgiSource.element = event.result;
+    lastFile = event.item.type + ': ' + event.item.src;
+    createJSInterface.info(lastProgress + lastFile);
+  });
+  preload.on("progress", function (event) {
+    lastProgress = (preload.progress * 100 | 0) + " % ";
+    createJSInterface.info(lastProgress + lastFile);
+  });
+  preload.on("complete", function (event) {
+    createJSInterface.info(lastProgress + ' Assets Loaded');
+    //var shizzle = res.assets.wave.element;
+    //var image = new createjs.Bitmap(res.assets.wave.element);
+    //image.alpha = 0.5;
+    //createJSInterface.doc.stage.addChildAt(image,0);
+    console.log("Finished Loading Assets");
+    callback();
+  });
+  preload.on("error", function (event, err) {
+    console.error("Error loading", event.data.src);
+  });
+  preload.loadManifest(manifest, true, '');
 
   /*
    var manifest = [{
@@ -2781,7 +2854,8 @@ CreateJSInterface.prototype.createStage = function (callback) {
  * tgi-interface-createjs/lib/tgi-interface-createjs-navigation.source.js
  */
 (function () { // for closure
-               //  var createjs = CreateJSInterface._createjs;
+  // todo (node fix) delayed load until interface started (otherwise CreateJSInterface._createjs undefined)
+  //  var createjs = CreateJSInterface._createjs;
 
   var col = 20;
 
@@ -2793,9 +2867,9 @@ CreateJSInterface.prototype.createStage = function (callback) {
   };
 
   CreateJSInterface.prototype.addNavButton = function (action) {
-    var self = this;
-    var navButton = this.doc.stage.addChild(new NavButton(self, action.name, "#777", function () {
-      self.dispatch(new Request({type: 'Command', command: action}));
+    var createJSInterface = this;
+    var navButton = this.doc.stage.addChild(new NavButton(createJSInterface, action.name, "#111", undefined, function () {
+      createJSInterface.dispatch(new Request({type: 'Command', command: action}));
     }));
     if (action.location) {
       navButton.x = action.location.x;
@@ -2803,15 +2877,14 @@ CreateJSInterface.prototype.createStage = function (callback) {
     } else {
       navButton.x = col;
       navButton.y = 20;
-      col += (navButton._widthWas + 4);
+      col += (navButton._widthWas + 8);
     }
   };
 
   /**
    * NavButton via createjs inheritance (createjs.promote below)
    */
-  function NavButtonContainer(createJSInterface, label, color, callback) {
-
+  function NavButtonContainer(createJSInterface, label, color, image, callback) {
     this.Container_constructor();
     this.color = color;
     this.label = label;
@@ -2826,7 +2899,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
     /**
      * Button Text
      */
-    var text = new createjs.Text(this.label, "24px Arial", "#111");
+    var text = new createjs.Text(this.label, "48px Arial", "#DDD");
     text.textBaseline = "top";
     text.textAlign = "center";
     this._widthWas = text.getMeasuredWidth() + 30;    // Size container base
@@ -2835,12 +2908,16 @@ CreateJSInterface.prototype.createStage = function (callback) {
     text.y = 12;
 
     var background = new createjs.Shape();
-    background.graphics.beginFill('#000').drawRoundRect(1, 1, this._widthWas, this._heightWas, 10);
-    background.graphics.beginFill(this.color).drawRoundRect(0, 0, this._widthWas - 1, this._heightWas - 1, 10);
+    background.graphics.beginFill(this.color).drawRoundRect(0, 0, this._widthWas, this._heightWas, 8);
     this.addChild(background, text);
     this.mouseChildren = false;
     this.on("click", function (event) {
-      this._tgiCallback();
+      try {
+        this._tgiCallback();
+      } catch (e) {
+        this._createJSInterface.info(e);
+      }
+
     });
     this.on("mousedown", function (event) {
       this._pressed = false;
@@ -2848,10 +2925,10 @@ CreateJSInterface.prototype.createStage = function (callback) {
       this._moved = false;
       if (event.nativeEvent.shiftKey) {
         this._shiftPressed = true;
-        this._createJSInterface.info('x: ' + this.x  + ', y: ' + this.y);
+        this._createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
       } else {
         this._pressed = true;
-        this.alpha = 0.5;
+        this.alpha = 0.8;
       }
     });
     this.on("pressmove", function (event) {
@@ -2859,7 +2936,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
         this._moved = true;
         event.currentTarget.x = event.stageX;
         event.currentTarget.y = event.stageY;
-        this._createJSInterface.info('x: ' + this.x  + ', y: ' + this.y);
+        this._createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
       }
     });
     this.on("pressup", function (event) {
@@ -2877,8 +2954,79 @@ CreateJSInterface.prototype.createStage = function (callback) {
  */
 
 CreateJSInterface.prototype.info = function (text) {
+  console.log('' + text);
+  var createJSInterface = this;
+  this.doc.debugPanel.visible = true;
+  this.doc.debugText.visible = true;
   this.doc.debugText.text  = text;
+  if (this.doc.infoTimeout)
+    clearTimeout(this.doc.infoTimeout);
+  this.doc.infoTimeout = setTimeout(function () {
+    createJSInterface.doc.debugPanel.visible = false;
+    createJSInterface.doc.debugText.visible = false;
+    createJSInterface.doc.infoTimeout=undefined;
+  },3000);
 };
+
+/**---------------------------------------------------------------------------------------------------------------------
+ * tgi-interface-bootstrap/lib/tgi-interface-bootstrap-panels.source.js
+ */
+
+/**
+ * activatePanel will create if needed, make panel visible and render contents
+ */
+CreateJSInterface.prototype.activatePanel = function (command) {
+  var createJSInterface = this;
+  var presentation = command.contents;
+  var name = presentation.get('name') || command.name;
+  var contents = presentation.get('contents');
+
+  /**
+   * this.panels array of panels
+   */
+  if (typeof this.panels == 'undefined')
+    this.panels = [];
+
+  /**
+   * See if command already has a panel
+   */
+  var panel;
+  for (var i = 0; (typeof panel == 'undefined') && i < this.panels.length; i++) {
+    if (name == this.panels[i].name)
+      panel = this.panels[i];
+  }
+
+  /**
+   * If we did not find panel create
+   */
+  if (typeof panel == 'undefined') {
+    panel = {
+      name: name,
+      listeners: []
+    };
+    this.panels.push(panel);
+
+    var shizzle = res.assets.wave.element;
+    var image = new createjs.Bitmap(res.assets.wave.element);
+    image.alpha = 0.5;
+    createJSInterface.doc.stage.addChildAt(image,0);
+
+
+
+  }
+
+  /**
+   * Render panel body based on presentation mode
+   */
+  switch (command.presentationMode) {
+    case 'View':
+      createJSInterface.info(JSON.stringify(contents));
+      break;
+    default:
+      createJSInterface.info('unknown command.presentationMode: ' + command.presentationMode);
+  }
+};
+
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/_packaging/lib-footer
  **/

@@ -16,29 +16,37 @@ app.set('brand', 'nav-play');
 app.setPresentation(nav);
 
 /**
+ * Lynch
+ */
+var lynchPresentation = new tgi.Presentation();
+lynchPresentation.set('contents', [
+  new tgi.Attribute({name: 'background', type: 'object', value: {image: res.assets.lynch}})
+]);
+var lynchCommand = new tgi.Command({
+  name: 'Lynch',
+  type: 'Presentation',
+  contents: lynchPresentation
+});
+
+/**
+ * Wave
+ */
+var wavePresentation = new tgi.Presentation();
+wavePresentation.set('contents', [
+  new tgi.Attribute({name: 'background', type: 'object', value: {image: res.assets.wave}})
+]);
+var waveCommand = new tgi.Command({
+  name: 'Wave',
+  type: 'Presentation',
+  contents: wavePresentation
+});
+
+/**
  * Navigation
  */
 nav.set('contents', [
-  new tgi.Command({
-    name: 'Eenie', type: 'Function', contents: function () {
-      app.info('Eenie ' + new Date());
-    }
-  }),
-  new tgi.Command({
-    name: 'Meenie', type: 'Function', contents: function () {
-      app.info('Meenie ' + new Date());
-    }
-  }),
-  new tgi.Command({
-    name: 'Miney', type: 'Function', location: {x:350, y:200}, contents: function () {
-      app.info('Miney ' + new Date());
-    }
-  }),
-  new tgi.Command({
-    name: 'Mo', type: 'Function', contents: function () {
-      app.info('Mo ' + new Date());
-    }
-  })
+  lynchCommand,
+  waveCommand
 ]);
 
 /**
