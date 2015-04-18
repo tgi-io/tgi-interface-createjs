@@ -2742,7 +2742,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   document.onkeydown = function (event) {
     var k = event ? event.which : window.event.keyCode;
     createJSInterface.info('You hit ' + k);
-    // event.preventDefault(); alt R hosed with this in chrome
+    // event.preventDefault(); cmd R hosed with this in chrome
   };
 
   /**
@@ -2763,21 +2763,21 @@ CreateJSInterface.prototype.createStage = function (callback) {
       if (resources.hasOwnProperty(resourceName) && resourceName[0] != '_') {
         var resource = resources[resourceName];
         var filePath = (path ? path + '/' : '' ) + resourceName;
-        //console.log(resourceName + ' ' + resource._type);
         if (resource._type == 'Folder') {
           getResourceItems(resource, filePath);
         } else {
           if (undefined === resource.firstFrame) {
             filePath += '.' + resource._type.toLowerCase();
-            console.log(filePath);
             manifest.push({src: filePath, _tgiSource: resource});
           } else {
+            resource.element = [];
             for (var i = resource.firstFrame; i <= resource.lastFrame; i++) {
+              resource.element.push(undefined);
               var frame = '' + i;
               if (resource.zeroPad)
                 frame = lpad(frame, resource.zeroPad, '0');
               var framePath = filePath + frame + '.' + resource._type.toLowerCase();
-              manifest.push({src: framePath, _tgiSource: resource});
+              manifest.push({src: framePath, _tgiSource: resource, _tgiFrame: i - resource.firstFrame});
             }
           }
         }
@@ -2794,7 +2794,10 @@ CreateJSInterface.prototype.createStage = function (callback) {
   createJSInterface.info(lastProgress + lastFile);
   preload.installPlugin(createjs.Sound);
   preload.on("fileload", function (event) {
-    event.item._tgiSource.element = event.result;
+    if (undefined !== event.item._tgiFrame)
+      event.item._tgiSource.element[event.item._tgiFrame] = event.result;
+    else
+      event.item._tgiSource.element = event.result;
     lastFile = event.item.type + ': ' + event.item.src;
     createJSInterface.info(lastProgress + lastFile);
   });
@@ -2804,10 +2807,6 @@ CreateJSInterface.prototype.createStage = function (callback) {
   });
   preload.on("complete", function (event) {
     createJSInterface.info(lastProgress + ' Assets Loaded');
-    //var shizzle = res.assets.wave.element;
-    //var image = new createjs.Bitmap(res.assets.wave.element);
-    //image.alpha = 0.5;
-    //createJSInterface.doc.stage.addChildAt(image,0);
     console.log("Finished Loading Assets");
     callback();
   });
@@ -2815,40 +2814,6 @@ CreateJSInterface.prototype.createStage = function (callback) {
     console.error("Error loading", event.data.src);
   });
   preload.loadManifest(manifest, true, '');
-
-  /*
-   var manifest = [{
-   src: "Plday_up.png",
-   id: "Play_up"
-   }, {
-   src: "Play_down.png",
-   id: "Play_down"
-   }, {
-   src: "M-GameBG.mp3",
-   id: "M-GameBG"
-   }];
-   for (var i = 1; i <= 54; i++) {
-   manifest.push({src: "Cards/face" + (i > 9 ? i : '0' + i) + ".png"})
-   }
-   var preload = new createjs.LoadQueue(true);
-   preload.installPlugin(createjs.Sound);
-   preload.on("fileload", function (event) {
-   console.log("loaded " + event.item.type + ': ' + event.item.src);
-   });
-   preload.on("progress", function (event) {
-   createJSInterface.info((preload.progress * 100 | 0) + " % Loaded");
-   });
-   preload.on("complete", function (event) {
-   console.log("Finished Loading Assets");
-   callback();
-   });
-   preload.on("error", function (event,err) {
-   console.error("Error loading", event.data.src);
-   });
-   preload.loadManifest(manifest, true, 'assets/');
-
-   */
-
 };
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/tgi-interface-createjs-navigation.source.js
@@ -2857,16 +2822,15 @@ CreateJSInterface.prototype.createStage = function (callback) {
   // todo (node fix) delayed load until interface started (otherwise CreateJSInterface._createjs undefined)
   //  var createjs = CreateJSInterface._createjs;
 
-  var col = 20;
-
   CreateJSInterface.prototype.createNavigation = function () {
+    var location = {x: 20, y: 20, dx: 10};
     var menuContents = this.presentation.get('contents');
     for (var menuItem in menuContents) if (menuContents.hasOwnProperty(menuItem)) {
-      this.addNavButton(menuContents[menuItem]);
+      this.addNavButton(menuContents[menuItem],location);
     }
   };
 
-  CreateJSInterface.prototype.addNavButton = function (action) {
+  CreateJSInterface.prototype.addNavButton = function (action, location) {
     var createJSInterface = this;
     var navButton = this.doc.stage.addChild(new NavButton(createJSInterface, action.name, "#111", undefined, function () {
       createJSInterface.dispatch(new Request({type: 'Command', command: action}));
@@ -2875,9 +2839,9 @@ CreateJSInterface.prototype.createStage = function (callback) {
       navButton.x = action.location.x;
       navButton.y = action.location.y;
     } else {
-      navButton.x = col;
-      navButton.y = 20;
-      col += (navButton._widthWas + 8);
+      navButton.x = location.x;
+      navButton.y = location.y;
+      location.x += (navButton._widthWas + location.dx);
     }
   };
 
@@ -2954,7 +2918,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
  */
 
 CreateJSInterface.prototype.info = function (text) {
-  console.log('' + text);
+  //console.log('' + text);
   var createJSInterface = this;
   this.doc.debugPanel.visible = true;
   this.doc.debugText.visible = true;
@@ -2980,20 +2944,29 @@ CreateJSInterface.prototype.activatePanel = function (command) {
   var presentation = command.contents;
   var name = presentation.get('name') || command.name;
   var contents = presentation.get('contents');
+  var i;
+  var defaultLocation = {
+    sx: 20,
+    sy: 120,
+    x: 20,
+    y: 120,
+    dx: 10,
+    dy: 8
+  };
 
   /**
-   * this.panels array of panels
+   * createJSInterface.panels array of panels
    */
-  if (typeof this.panels == 'undefined')
-    this.panels = [];
+  if (typeof createJSInterface.panels == 'undefined')
+    createJSInterface.panels = [];
 
   /**
    * See if command already has a panel
    */
   var panel;
-  for (var i = 0; (typeof panel == 'undefined') && i < this.panels.length; i++) {
-    if (name == this.panels[i].name)
-      panel = this.panels[i];
+  for (i = 0; (typeof panel == 'undefined') && i < createJSInterface.panels.length; i++) {
+    if (name == createJSInterface.panels[i].name)
+      panel = createJSInterface.panels[i];
   }
 
   /**
@@ -3002,29 +2975,119 @@ CreateJSInterface.prototype.activatePanel = function (command) {
   if (typeof panel == 'undefined') {
     panel = {
       name: name,
+      container: new createjs.Container(),
       listeners: []
     };
-    this.panels.push(panel);
+    createJSInterface.panels.push(panel);
+    createJSInterface.doc.stage.addChildAt(panel.container, 0);
 
-    var shizzle = res.assets.wave.element;
-    var image = new createjs.Bitmap(res.assets.wave.element);
-    image.alpha = 0.5;
-    createJSInterface.doc.stage.addChildAt(image,0);
+    /**
+     * Each item
+     */
+    for (i = 0; i < contents.length; i++) {
+      var item = contents[i];
+      if (typeof item == 'string')
+        renderText(item);
+      else if (item instanceof Attribute)
+        renderAttribute(item);
+      else if (item instanceof Command)
+        renderCommand(item);
+    }
+  }
 
+  function renderAttribute(attribute) {
+    if (attribute.type == 'Object') {
+      if (attribute.value.image && attribute.value.image.element) {
+        if (attribute.value.image.element instanceof Array) {
 
+          var size = {height: attribute.value.image.element[0].naturalHeight, width: attribute.value.image.element[0].naturalWidth};
+          if (!attribute.value.image.spriteSheet) {
+            var data = {
+              images: attribute.value.image.element,
+              frames: {
+                width: size.width,
+                height: size.height
+              }
+            };
+            attribute.value.image.spriteSheet = new createjs.SpriteSheet(data);
+          }
+          var frame = attribute.value.frame || 0;
+          var sprite = renderSprite(attribute.value.image.spriteSheet, attribute.value.location, size);
+          sprite.gotoAndStop(frame);
 
+        } else {
+          renderImage(attribute.value.image.element, attribute.value.location);
+        }
+      } else if (attribute.value.text) {
+        renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color);
+      } else {
+        renderText(JSON.stringify(attribute.value));
+      }
+    } else {
+      renderText(attribute.value);
+    }
+  }
+
+  function renderCommand(command) {
+    console.log('renderCommand ' + command);
+  }
+
+  function renderText(label, location, font, color) {
+    var myFont = font || "48px Arial";
+    var myColor = color || "#000";
+    var text = new createjs.Text(label, myFont, myColor);
+    if (location) {
+      text.x = location.x;
+      text.y = location.y;
+    } else {
+      defaultLocation.x = defaultLocation.sx;
+      text.x = defaultLocation.x;
+      text.y = defaultLocation.y;
+      defaultLocation.y += (text.getMeasuredHeight() + defaultLocation.dy);
+    }
+    panel.container.addChild(text);
+    return text;
+  }
+
+  function renderImage(image, location) {
+    var bitmap = new createjs.Bitmap(image);
+    if (location) {
+      bitmap.x = location.x;
+      bitmap.y = location.y;
+    } else {
+      bitmap.x = defaultLocation.x;
+      bitmap.y = defaultLocation.y;
+      defaultLocation.x += (image.naturalWidth + defaultLocation.dx);
+    }
+    panel.container.addChild(bitmap);
+    return bitmap;
+  }
+
+  function renderSprite(spriteSheet, location, size) {
+    var sprite = new createjs.Sprite(spriteSheet);
+    if (location) {
+      sprite.x = location.x;
+      sprite.y = location.y;
+    } else {
+      if (defaultLocation.x + size.width + defaultLocation.dx > 1920) { //todo 1920 hard coded
+        defaultLocation.x = defaultLocation.sx;
+        defaultLocation.y += (size.height + defaultLocation.dy);
+      }
+      sprite.x = defaultLocation.x;
+      sprite.y = defaultLocation.y;
+      defaultLocation.x += (size.width + defaultLocation.dx);
+    }
+    panel.container.addChild(sprite);
+    return sprite;
   }
 
   /**
-   * Render panel body based on presentation mode
+   * Make this panel visible hide others
    */
-  switch (command.presentationMode) {
-    case 'View':
-      createJSInterface.info(JSON.stringify(contents));
-      break;
-    default:
-      createJSInterface.info('unknown command.presentationMode: ' + command.presentationMode);
+  for (i = 0; createJSInterface.panels.length; i++) {
+    createJSInterface.panels[i].container.visible = name == createJSInterface.panels[i].name;
   }
+
 };
 
 /**---------------------------------------------------------------------------------------------------------------------

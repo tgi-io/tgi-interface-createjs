@@ -8,7 +8,7 @@ var res = {
       "face": {
         "_type": "PNG",
         "firstFrame": 1,
-        "lastFrame": 1,
+        "lastFrame": 54,
         "zeroPad": 2
       }
     },
