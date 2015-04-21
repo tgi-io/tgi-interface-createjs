@@ -147,6 +147,10 @@ var spritePresentation = new tgi.Presentation();
 //spritePresentation.set('contents', deck);
 
 var reel = new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: 0}});
+var reelSpin = [];
+reelSpin.push(makeImage(res.assets.reels.spinMedium['Full Reel Spin-Regular-MEDIUM_'], {x: 111, y: 111}));
+reelSpin.push(makeImage(res.assets.reels.spinMedium['Full Reel Spin-Regular-MEDIUM_'], {x: 333, y: 333}));
+reelSpin.push(makeImage(res.assets.reels.spinMedium['Full Reel Spin-Regular-MEDIUM_'], {x: 999, y: 999}));
 
 function setListener() {
   if (setListener.once)
@@ -175,7 +179,12 @@ spritePresentation.set('contents', [
       reel._sourceElement.stop();
     }
   }),
-  reel
+  reel,
+  '',
+  reelSpin[0],
+  reelSpin[1],
+  reelSpin[2],
+
 ]);
 
 var spriteCommand = new tgi.Command({

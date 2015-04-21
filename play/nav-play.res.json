@@ -55,6 +55,27 @@
     "lynch": {
       "_type": "JPG"
     },
+    "reels": {
+      "_type": "Folder",
+      "spinFast": {
+        "_type": "Folder",
+        "Full Reel Spin-Regular-FAST_": {
+          "_type": "PNG",
+          "firstFrame": 0,
+          "lastFrame": 9,
+          "zeroPad": 2
+        }
+      },
+      "spinMedium": {
+        "_type": "Folder",
+        "Full Reel Spin-Regular-MEDIUM_": {
+          "_type": "PNG",
+          "firstFrame": 0,
+          "lastFrame": 9,
+          "zeroPad": 2
+        }
+      }
+    },
     "surfer-girl-cow": {
       "_type": "PNG"
     },

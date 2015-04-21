@@ -2960,7 +2960,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       } else if (attribute.value.text) {
         sourceElement = renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color);
       } else {
-        sourceElement = renderText(JSON.stringify(attribute.value));
+        sourceElement = renderText(JSON.stringify(attribute.value),undefined,'24px Courier');
       }
     } else {
       sourceElement = renderText(attribute.value);
@@ -3082,6 +3082,13 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       defaultLocation.x += (size.width + defaultLocation.dx);
     }
     panel.container.addChild(sprite);
+    sprite.on("pressmove", function (event) {
+      if (event.nativeEvent.shiftKey) {
+        event.currentTarget.x = event.stageX;
+        event.currentTarget.y = event.stageY;
+        createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
+      }
+    });
     return sprite;
   }
   /**
