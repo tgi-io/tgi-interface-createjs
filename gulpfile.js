@@ -19,6 +19,7 @@ var libFiles = [
   'lib/tgi-interface-createjs-navigation.source.js',
   'lib/tgi-interface-createjs-queries.source.js',
   'lib/tgi-interface-createjs-panels.source.js',
+  'lib/tgi-interface-createjs-buttons.source.js',
   'lib/_packaging/lib-footer'
 ];
 

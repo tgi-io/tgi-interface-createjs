@@ -2818,101 +2818,36 @@ CreateJSInterface.prototype.createStage = function (callback) {
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/tgi-interface-createjs-navigation.source.js
  */
-(function () { // for closure
-  // todo (node fix) delayed load until interface started (otherwise CreateJSInterface._createjs undefined)
-  //  var createjs = CreateJSInterface._createjs;
 
-  CreateJSInterface.prototype.createNavigation = function () {
-    var location = {x: 20, y: 20, dx: 10};
-    var menuContents = this.presentation.get('contents');
-    for (var menuItem in menuContents) if (menuContents.hasOwnProperty(menuItem)) {
-      this.addNavButton(menuContents[menuItem],location);
-    }
-  };
 
-  CreateJSInterface.prototype.addNavButton = function (action, location) {
-    var createJSInterface = this;
-    var navButton = this.doc.stage.addChild(new NavButton(createJSInterface, action.name, "#111", undefined, function () {
-      createJSInterface.dispatch(new Request({type: 'Command', command: action}));
-    }));
-    if (action.location) {
-      navButton.x = action.location.x;
-      navButton.y = action.location.y;
-    } else {
-      navButton.x = location.x;
-      navButton.y = location.y;
-      location.x += (navButton._widthWas + location.dx);
-    }
-  };
-
-  /**
-   * NavButton via createjs inheritance (createjs.promote below)
-   */
-  function NavButtonContainer(createJSInterface, label, color, image, callback) {
-    this.Container_constructor();
-    this.color = color;
-    this.label = label;
-    this.name = label;
-    this.setup();
-    this._tgiCallback = callback;
-    this._createJSInterface = createJSInterface;
-  }
-
-  var p = createjs.extend(NavButtonContainer, createjs.Container);
-  p.setup = function () {
+CreateJSInterface.prototype.createNavigation = function () {
+  var createJSInterface = this;
+  var location = {x: 20, y: 20, dx: 10};
+  var menuContents = createJSInterface.presentation.get('contents');
+  for (var menuItem in menuContents) if (menuContents.hasOwnProperty(menuItem)) {
     /**
-     * Button Text
+     * Provide closure for each command
      */
-    var text = new createjs.Text(this.label, "48px Arial", "#DDD");
-    text.textBaseline = "top";
-    text.textAlign = "center";
-    this._widthWas = text.getMeasuredWidth() + 30;    // Size container base
-    this._heightWas = text.getMeasuredHeight() + 28;
-    text.x = this._widthWas / 2; // Center
-    text.y = 12;
-
-    var background = new createjs.Shape();
-    background.graphics.beginFill(this.color).drawRoundRect(0, 0, this._widthWas, this._heightWas, 8);
-    this.addChild(background, text);
-    this.mouseChildren = false;
-    this.on("click", function (event) {
-      try {
-        this._tgiCallback();
-      } catch (e) {
-        this._createJSInterface.info(e);
-      }
-
-    });
-    this.on("mousedown", function (event) {
-      this._pressed = false;
-      this._shiftPressed = false;
-      this._moved = false;
-      if (event.nativeEvent.shiftKey) {
-        this._shiftPressed = true;
-        this._createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
+    (function (command, location) {
+      var navButton = createJSInterface.doc.stage.addChild(new CreateJSInterface._makeButton(createJSInterface, command.name, "#111", undefined, function () {
+        /**
+         * Click!
+         */
+        createJSInterface.dispatch(new Request({type: 'Command', command: command}));
+      }));
+      if (command.location) {
+        navButton.x = command.location.x;
+        navButton.y = command.location.y;
       } else {
-        this._pressed = true;
-        this.alpha = 0.8;
+        navButton.x = location.x;
+        navButton.y = location.y;
+        location.x += (navButton._widthWas + location.dx);
       }
-    });
-    this.on("pressmove", function (event) {
-      if (this._shiftPressed) {
-        this._moved = true;
-        event.currentTarget.x = event.stageX;
-        event.currentTarget.y = event.stageY;
-        this._createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
-      }
-    });
-    this.on("pressup", function (event) {
-      if (this._pressed) {
-        this.alpha = 1;
-        this._pressed = false;
-      }
-    });
-  };
-  var NavButton = createjs.promote(NavButtonContainer, "Container");
+    })(menuContents[menuItem], location);
+  }
+};
 
-}());
+
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/tgi-interface-createjs-queries.source.js
  */
@@ -2945,12 +2880,14 @@ CreateJSInterface.prototype.activatePanel = function (command) {
   var name = presentation.get('name') || command.name;
   var contents = presentation.get('contents');
   var i;
+  var canvasWidth = 1920; // todo 1920 hard coded
+  var largestImageHeight = 0;
   var defaultLocation = {
-    sx: 20,
+    sx: 20, // starting
     sy: 120,
-    x: 20,
+    x: 20,  // current
     y: 120,
-    dx: 10,
+    dx: 10, // delta (gaps)
     dy: 8
   };
 
@@ -2996,11 +2933,14 @@ CreateJSInterface.prototype.activatePanel = function (command) {
   }
 
   function renderAttribute(attribute) {
+    var sourceElement;
     if (attribute.type == 'Object') {
       if (attribute.value.image && attribute.value.image.element) {
         if (attribute.value.image.element instanceof Array) {
-
-          var size = {height: attribute.value.image.element[0].naturalHeight, width: attribute.value.image.element[0].naturalWidth};
+          var size = {
+            height: attribute.value.image.element[0].naturalHeight,
+            width: attribute.value.image.element[0].naturalWidth
+          };
           if (!attribute.value.image.spriteSheet) {
             var data = {
               images: attribute.value.image.element,
@@ -3016,50 +2956,121 @@ CreateJSInterface.prototype.activatePanel = function (command) {
           sprite.gotoAndStop(frame);
 
         } else {
-          renderImage(attribute.value.image.element, attribute.value.location);
+          sourceElement = renderImage(attribute.value.image.element, attribute.value.location);
         }
       } else if (attribute.value.text) {
-        renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color);
+        sourceElement = renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color);
       } else {
-        renderText(JSON.stringify(attribute.value));
+        sourceElement = renderText(JSON.stringify(attribute.value));
       }
     } else {
-      renderText(attribute.value);
+      sourceElement = renderText(attribute.value);
     }
+    attribute._sourceElement = sourceElement;
   }
 
   function renderCommand(command) {
-    console.log('renderCommand ' + command);
+    var sourceElement;
+    if (command.location) {
+      sourceElement = renderButton(command, command.location);
+    } else {
+      sourceElement = renderButton(command);
+      if (defaultLocation.x + sourceElement._widthWas + defaultLocation.dx > canvasWidth) {
+        newLine();
+      }
+      sourceElement.x = defaultLocation.x;
+      sourceElement.y = defaultLocation.y;
+      if (largestImageHeight < sourceElement._heightWas)
+        largestImageHeight = sourceElement._heightWas;
+      defaultLocation.x += (sourceElement._widthWas + defaultLocation.dx);
+    }
+    command._sourceElement = sourceElement;
+  }
+
+  function renderButton(command, location) {
+    try {
+      var navButton = panel.container.addChild(new CreateJSInterface._makeButton(createJSInterface, command.name, "#111", command.images, function () {
+        createJSInterface.dispatch(new Request({type: 'Command', command: command}));
+      }));
+      if (location) {
+        navButton.x = location.x;
+        navButton.y = location.y;
+      }
+
+    } catch (e) {
+      console.log('error ' + e);
+    }
+
+    return navButton;
+  }
+
+  function newLine() {
+    defaultLocation.x = defaultLocation.sx;
+    if (largestImageHeight) {
+      defaultLocation.y += (largestImageHeight + defaultLocation.dy);
+      largestImageHeight = 0;
+    }
   }
 
   function renderText(label, location, font, color) {
     var myFont = font || "48px Arial";
     var myColor = color || "#000";
     var text = new createjs.Text(label, myFont, myColor);
+    var isLocked = false;
     if (location) {
+      isLocked = location.locked;
       text.x = location.x;
       text.y = location.y;
     } else {
-      defaultLocation.x = defaultLocation.sx;
+      newLine();
       text.x = defaultLocation.x;
       text.y = defaultLocation.y;
       defaultLocation.y += (text.getMeasuredHeight() + defaultLocation.dy);
     }
     panel.container.addChild(text);
+    if (!isLocked) {
+      text.on("pressmove", function (event) {
+        if (event.nativeEvent.shiftKey) {
+          event.currentTarget.x = event.stageX;
+          event.currentTarget.y = event.stageY;
+          createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
+        }
+      });
+    }
     return text;
   }
 
   function renderImage(image, location) {
     var bitmap = new createjs.Bitmap(image);
+    var isLocked = false;
     if (location) {
+      isLocked = location.locked;
       bitmap.x = location.x;
       bitmap.y = location.y;
+      if (location.scaleX)
+        bitmap.scaleX = location.scaleX;
+      if (location.scaleY)
+        bitmap.scaleY = location.scaleY;
     } else {
+      if (defaultLocation.x + image.naturalWidth + defaultLocation.dx > canvasWidth) {
+        newLine();
+      }
+      if (largestImageHeight < image.naturalHeight)
+        largestImageHeight = image.naturalHeight;
       bitmap.x = defaultLocation.x;
       bitmap.y = defaultLocation.y;
       defaultLocation.x += (image.naturalWidth + defaultLocation.dx);
     }
     panel.container.addChild(bitmap);
+    if (!isLocked) {
+      bitmap.on("pressmove", function (event) {
+        if (event.nativeEvent.shiftKey) {
+          event.currentTarget.x = event.stageX;
+          event.currentTarget.y = event.stageY;
+          createJSInterface.info('x: ' + this.x + ', y: ' + this.y);
+        }
+      });
+    }
     return bitmap;
   }
 
@@ -3069,7 +3080,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       sprite.x = location.x;
       sprite.y = location.y;
     } else {
-      if (defaultLocation.x + size.width + defaultLocation.dx > 1920) { //todo 1920 hard coded
+      if (defaultLocation.x + size.width + defaultLocation.dx > canvasWidth) {
         defaultLocation.x = defaultLocation.sx;
         defaultLocation.y += (size.height + defaultLocation.dy);
       }
@@ -3090,6 +3101,112 @@ CreateJSInterface.prototype.activatePanel = function (command) {
 
 };
 
+/**---------------------------------------------------------------------------------------------------------------------
+ * tgi-interface-createjs/lib/tgi-interface-createjs-buttons.source.js
+ */
+(function () { // for closure
+
+  /**
+   * SimpleButton via createjs inheritance (createjs.promote below)
+   */
+  function SimpleButtonContainer(createJSInterface, label, color, images, callback) {
+    this.Container_constructor();
+    this.color = color;
+    this.label = label;
+    this.name = label;
+    this.images = images;
+    this.setup();
+    this._tgiCallback = callback;
+    this._createJSInterface = createJSInterface;
+  }
+
+  var p = createjs.extend(SimpleButtonContainer, createjs.Container);
+  p.setup = function () {
+
+    var button = this;
+
+    if (button.images) {
+      if (button.images instanceof Array) {
+        button._UpBitmap =  new createjs.Bitmap(button.images[0].element);
+        button._widthWas = button.images[0].element.naturalWidth;
+        button._heightWas = button.images[0].element.naturalHeight;
+        button._DownBitmap =  new createjs.Bitmap(button.images[1].element);
+        button.addChild(button._UpBitmap, button._DownBitmap);
+        button._DownBitmap.alpha = 0;
+      } else {
+        button._UpBitmap =  new createjs.Bitmap(button.images.element);
+        button._widthWas = button.images.element.naturalWidth;
+        button._heightWas = button.images.element.naturalHeight;
+        button.addChild(button._UpBitmap);
+      }
+    } else {
+      /**
+       * Button Text
+       */
+      var text = new createjs.Text(button.label, "48px Arial", "#DDD");
+      text.textBaseline = "top";
+      text.textAlign = "center";
+      button._widthWas = text.getMeasuredWidth() + 30;    // Size container base
+      button._heightWas = text.getMeasuredHeight() + 28;
+      text.x = button._widthWas / 2; // Center
+      text.y = 12;
+
+      /**
+       * Round Back background
+       */
+      var background = new createjs.Shape();
+      background.graphics.beginFill(button.color).drawRoundRect(0, 0, button._widthWas, button._heightWas, 8);
+      button.addChild(background, text);
+    }
+
+    button.mouseChildren = false;
+    button.on("click", function (event) {
+      try {
+        button._tgiCallback();
+      } catch (e) {
+        button._createJSInterface.info(e);
+      }
+    });
+    button.on("mousedown", function (event) {
+      button._pressed = false;
+      button._shiftPressed = false;
+      button._moved = false;
+      if (event.nativeEvent.shiftKey) {
+        button._shiftPressed = true;
+        button._createJSInterface.info('x: ' + button.x + ', y: ' + button.y);
+      } else {
+        button._pressed = true;
+        if (button._DownBitmap) {
+          button._DownBitmap.alpha = 1;
+          button._UpBitmap.alpha = 0;
+        } else {
+          button.alpha = 0.8;
+        }
+      }
+    });
+    button.on("pressmove", function (event) {
+      if (button._shiftPressed) {
+        button._moved = true;
+        event.currentTarget.x = event.stageX;
+        event.currentTarget.y = event.stageY;
+        button._createJSInterface.info('x: ' + button.x + ', y: ' + button.y);
+      }
+    });
+    button.on("pressup", function (event) {
+      if (button._pressed) {
+        if (button._DownBitmap) {
+          button._DownBitmap.alpha = 0;
+          button._UpBitmap.alpha = 1;
+        } else {
+          button.alpha = 1;
+        }
+        button._pressed = false;
+      }
+    });
+  };
+  CreateJSInterface._makeButton = createjs.promote(SimpleButtonContainer, "Container");
+
+}());
 /**---------------------------------------------------------------------------------------------------------------------
  * tgi-interface-createjs/lib/_packaging/lib-footer
  **/

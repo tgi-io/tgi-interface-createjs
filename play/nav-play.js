@@ -16,64 +16,151 @@ app.set('brand', 'nav-play');
 app.setPresentation(nav);
 
 /**
- * Lynch
+ * Helpers for createjs
+ */
+function makeDisplayObject(name, object) {
+  return new tgi.Attribute({
+    name: name,
+    type: 'Object',
+    value: object
+  });
+}
+function makeText(text, font, color, location) {
+  font = font || '48px Arial';
+  color = color || '#000';
+  return makeDisplayObject('TextObject', {text: text, font: font, color: color, location: location});
+}
+function makeImage(resource, location) {
+  return makeDisplayObject('ImageObject', {image: resource, location: location});
+}
+
+/**
+ * Text
  */
 var lynchPresentation = new tgi.Presentation();
 lynchPresentation.set('contents', [
-  new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.lynch, location: {x: 0, y: 0}}}),
-  'Mr Lynch',
-  'blah'
+  makeImage(res.assets.lynch, {x: 0, y: 0, locked: true}),
+  'Strings are rendered as text by default',
+  'they are limited to default format and position',
+  makeText('you can change stuff', '32px Comic Sans MS', '#00F'),
+  '',
+  '',
+  '',
+  makeText('you can use google fonts', '48px Lobster', '#040'),
+  makeText('THINK', '72px Lobster', '#404', {x: 1406, y: 295}),
+  makeText('THINK', '72px Lobster', '#84A', {x: 1404, y: 293})
 ]);
-var lynchCommand = new tgi.Command({
-  name: 'Lynch',
+var textCommand = new tgi.Command({
+  name: 'Text',
   type: 'Presentation',
   contents: lynchPresentation
 });
 
 /**
- * Wave
+ * Images
  */
-var wavePresentation = new tgi.Presentation();
-wavePresentation.set('contents', [
-  new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.wave, location: {x: 0, y: 0}}}),
-  new tgi.Attribute({
-    name: 'background',
-    type: 'Object',
-    value: {text: 'Surfs up!!!', font: "72px Arial", color: '#FF0', location: {x: 1425, y: 400}}
-  }),
-  new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Play_up}}),
-  new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Play_down}}),
-  lynchCommand
+var imagePresentation = new tgi.Presentation();
+imagePresentation.set('contents', [
+  makeImage(res.assets.wave, {x: 0, y: 0, locked: true}),
+  'Images are stacked horizontally',
+  '',
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.CuteFace),
+  makeImage(res.assets.FemaleSwim),
+  makeImage(res.assets.MaleSwim),
+  makeImage(res.assets.GuitarMan),
+  makeImage(res.assets.BeachBall),
+  makeImage(res.assets['surfer-girl-cow'], {x: 975, y: 582, scaleX: 2, scaleY: 2}),
+  makeImage(res.assets.CuteFace, {x: 1013, y: 764, scaleX: .2, scaleY: .2}),
+  makeImage(res.assets.CuteFace, {x: 1401, y: 939, scaleX: .2, scaleY: .2}),
+  '',
+  '',
+  '                                 Unless location is specified'
 ]);
-var waveCommand = new tgi.Command({
-  name: 'Wave',
+var imageCommand = new tgi.Command({
+  name: 'Image',
   type: 'Presentation',
-  contents: wavePresentation
+  contents: imagePresentation
 });
 
 /**
- * Card
+ * Button
  */
-var cardPresentation = new tgi.Presentation();
-var deck = [];
-for (var i = 0; i < 52; i++)
-  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Cards.face, frame: i}}));
+var buttonPresentation = new tgi.Presentation();
+var moveText  = makeText('Location can be used of course as follows: ');
+var supText  = makeText("That's what's up");
+buttonPresentation.set('contents', [
+  'Buttons can be simple text buttons',
+  new tgi.Command({
+    name: 'yo', type: 'Function', contents: function () {
+      app.info('sup');
+    }
+  }),
+  new tgi.Command({
+    name: 'YO!!!', type: 'Function', contents: function () {
+      alert('WHAT IS UP???');
+    }
+  }),
+  moveText,
+  new tgi.Command({
+    name: 'move me', type: 'Function', location: {x: 927, y: 251}, contents: function () {
+      console.log('sup foo');
+      this._sourceElement.x += 32;
+      moveText._sourceElement.x += 32;
+    }
+  }),
+  '',
+  'And you can have graphic buttons click em for more info',
+  new tgi.Command({
+    images: res.assets.PressMe, type: 'Function', contents: function () {
+      supText._sourceElement.text ='This button has one image';
+    }
+  }),
+  new tgi.Command({
+    images: [res.assets.Play_up,res.assets.Play_down], type: 'Function', contents: function () {
+      supText._sourceElement.text ='This button has TWO images';
+    }
+  }),
+  supText
 
-cardPresentation.set('contents', deck);
-var cardCommand = new tgi.Command({
-  name: 'Card',
+
+]);
+var buttonCommand = new tgi.Command({
+  name: 'Button',
   type: 'Presentation',
-  contents: cardPresentation
+  contents: buttonPresentation
 });
 
+/**
+ * Sprite
+ */
+var spritePresentation = new tgi.Presentation();
+var deck = [];
+for (var i = 0; i < res.assets.Cards.face.lastFrame; i++)
+  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Cards.face, frame: i}}));
+for (i = 0; i < res.assets.Motion.Frame.lastFrame; i++)
+  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: i}}));
+
+spritePresentation.set('contents', deck);
+var spriteCommand = new tgi.Command({
+  name: 'Sprite',
+  type: 'Presentation',
+  contents: spritePresentation
+});
 
 /**
  * Navigation
  */
 nav.set('contents', [
-  lynchCommand,
-  waveCommand,
-  cardCommand
+  textCommand,
+  imageCommand,
+  buttonCommand,
+  spriteCommand
 ]);
 
 /**
