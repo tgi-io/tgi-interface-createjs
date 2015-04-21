@@ -11,7 +11,7 @@ var res = {
       "face": {
         "_type": "PNG",
         "firstFrame": 1,
-        "lastFrame": 3,
+        "lastFrame": 54,
         "zeroPad": 2
       }
     },
@@ -35,7 +35,7 @@ var res = {
       "Frame": {
         "_type": "PNG",
         "firstFrame": 1,
-        "lastFrame": 3,
+        "lastFrame": 27,
         "zeroPad": 2
       }
     },

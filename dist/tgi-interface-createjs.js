@@ -2748,7 +2748,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   /**
    * Ticker update method
    */
-  createjs.Ticker.setFPS(60);
+  createjs.Ticker.setFPS(24);
   createjs.Ticker.addEventListener("tick", function (event) {
     createJSInterface.doc.stage.update(event);
   });
@@ -2931,7 +2931,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
         renderCommand(item);
     }
   }
-
   function renderAttribute(attribute) {
     var sourceElement;
     if (attribute.type == 'Object') {
@@ -2952,8 +2951,8 @@ CreateJSInterface.prototype.activatePanel = function (command) {
             attribute.value.image.spriteSheet = new createjs.SpriteSheet(data);
           }
           var frame = attribute.value.frame || 0;
-          var sprite = renderSprite(attribute.value.image.spriteSheet, attribute.value.location, size);
-          sprite.gotoAndStop(frame);
+          sourceElement = renderSprite(attribute.value.image.spriteSheet, attribute.value.location, size);
+          sourceElement.gotoAndStop(frame);
 
         } else {
           sourceElement = renderImage(attribute.value.image.element, attribute.value.location);
@@ -2968,7 +2967,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     attribute._sourceElement = sourceElement;
   }
-
   function renderCommand(command) {
     var sourceElement;
     if (command.location) {
@@ -2986,7 +2984,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     command._sourceElement = sourceElement;
   }
-
   function renderButton(command, location) {
     try {
       var navButton = panel.container.addChild(new CreateJSInterface._makeButton(createJSInterface, command.name, "#111", command.images, function () {
@@ -3003,7 +3000,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
 
     return navButton;
   }
-
   function newLine() {
     defaultLocation.x = defaultLocation.sx;
     if (largestImageHeight) {
@@ -3011,7 +3007,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       largestImageHeight = 0;
     }
   }
-
   function renderText(label, location, font, color) {
     var myFont = font || "48px Arial";
     var myColor = color || "#000";
@@ -3039,7 +3034,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     return text;
   }
-
   function renderImage(image, location) {
     var bitmap = new createjs.Bitmap(image);
     var isLocked = false;
@@ -3073,7 +3067,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     return bitmap;
   }
-
   function renderSprite(spriteSheet, location, size) {
     var sprite = new createjs.Sprite(spriteSheet);
     if (location) {
@@ -3091,14 +3084,12 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     panel.container.addChild(sprite);
     return sprite;
   }
-
   /**
    * Make this panel visible hide others
    */
   for (i = 0; createJSInterface.panels.length; i++) {
     createJSInterface.panels[i].container.visible = name == createJSInterface.panels[i].name;
   }
-
 };
 
 /**---------------------------------------------------------------------------------------------------------------------

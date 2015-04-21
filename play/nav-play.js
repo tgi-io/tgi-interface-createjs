@@ -92,8 +92,8 @@ var imageCommand = new tgi.Command({
  * Button
  */
 var buttonPresentation = new tgi.Presentation();
-var moveText  = makeText('Location can be used of course as follows: ');
-var supText  = makeText("That's what's up");
+var moveText = makeText('Location can be used of course as follows: ');
+var supText = makeText("That's what's up");
 buttonPresentation.set('contents', [
   'Buttons can be simple text buttons',
   new tgi.Command({
@@ -118,17 +118,15 @@ buttonPresentation.set('contents', [
   'And you can have graphic buttons click em for more info',
   new tgi.Command({
     images: res.assets.PressMe, type: 'Function', contents: function () {
-      supText._sourceElement.text ='This button has one image';
+      supText._sourceElement.text = 'This button has one image';
     }
   }),
   new tgi.Command({
-    images: [res.assets.Play_up,res.assets.Play_down], type: 'Function', contents: function () {
-      supText._sourceElement.text ='This button has TWO images';
+    images: [res.assets.Play_up, res.assets.Play_down], type: 'Function', contents: function () {
+      supText._sourceElement.text = 'This button has TWO images';
     }
   }),
   supText
-
-
 ]);
 var buttonCommand = new tgi.Command({
   name: 'Button',
@@ -140,13 +138,46 @@ var buttonCommand = new tgi.Command({
  * Sprite
  */
 var spritePresentation = new tgi.Presentation();
-var deck = [];
-for (var i = 0; i < res.assets.Cards.face.lastFrame; i++)
-  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Cards.face, frame: i}}));
-for (i = 0; i < res.assets.Motion.Frame.lastFrame; i++)
-  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: i}}));
+//var deck = [];
+//for (var i = 0; i < res.assets.Cards.face.lastFrame; i++)
+//  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Cards.face, frame: i}}));
+//for (i = 0; i < res.assets.Motion.Frame.lastFrame; i++)
+//  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: i}}));
+//
+//spritePresentation.set('contents', deck);
 
-spritePresentation.set('contents', deck);
+var reel = new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: 0}});
+
+function setListener() {
+  if (setListener.once)
+    return;
+  setListener.once = true;
+  //console.log('var setListener = function () {');
+
+  reel._sourceElement.on('animationend', function (payload) {
+    //console.log('animationend: ' + payload + ', reel._sourceElement.currentFrame ' + reel._sourceElement.currentFrame);
+    reel._sourceElement.stop();
+  });
+
+}
+
+spritePresentation.set('contents', [
+  'Sprite animations',
+  new tgi.Command({
+    name: 'play', type: 'Function', contents: function () {
+      setListener();
+      reel._sourceElement.gotoAndPlay();
+    }
+  }),
+  new tgi.Command({
+    name: 'stop', type: 'Function', contents: function () {
+      setListener();
+      reel._sourceElement.stop();
+    }
+  }),
+  reel
+]);
+
 var spriteCommand = new tgi.Command({
   name: 'Sprite',
   type: 'Presentation',
