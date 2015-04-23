@@ -2990,7 +2990,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
           sourceElement = renderImage(attribute.value.image.element, attribute.value.location);
         }
       } else if (attribute.value.text) {
-        sourceElement = renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color);
+        sourceElement = renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color, attribute.value.options);
       } else {
         sourceElement = renderText(JSON.stringify(attribute.value), undefined, '24px Courier');
       }
@@ -3043,7 +3043,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
   }
 
-  function renderText(label, location, font, color) {
+  function renderText(label, location, font, color, options) {
     var myFont = font || "48px Arial";
     var myColor = color || "#000";
     var text = new createjs.Text(label, myFont, myColor);
@@ -3057,6 +3057,13 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       text.x = defaultLocation.x;
       text.y = defaultLocation.y;
       defaultLocation.y += (text.getMeasuredHeight() + defaultLocation.dy);
+    }
+    if (options) {
+      for (var option in options) {
+        if (options.hasOwnProperty(option)) {
+          text[option] = options[option];
+        }
+      }
     }
     panel.container.addChild(text);
     if (!isLocked) {
