@@ -183,7 +183,7 @@ spritePresentation.set('contents', [
   '',
   reelSpin[0],
   reelSpin[1],
-  reelSpin[2],
+  reelSpin[2]
 
 ]);
 
