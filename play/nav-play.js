@@ -182,8 +182,10 @@ spritePresentation.set('contents', [
 spritePresentation.onEvent('*', function (event, meta) {
   console.log('Event: ' + event + ' Meta: ' + meta);
   if (meta == 'PanelCreated') {
+    spritePresentation._panel.infoHandler = function (text) {
+      console.log('infoHandler: ' + text);
+    };
     reel._sourceElement.on('animationend', function (payload) {
-      //console.log('animationend: ' + payload + ', reel._sourceElement.currentFrame ' + reel._sourceElement.currentFrame);
       reel._sourceElement.stop();
     });
   }

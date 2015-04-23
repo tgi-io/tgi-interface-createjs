@@ -2853,8 +2853,17 @@ CreateJSInterface.prototype.createNavigation = function () {
  */
 
 CreateJSInterface.prototype.info = function (text) {
-  //console.log('' + text);
   var createJSInterface = this;
+
+  /**
+   * see if captured
+   */
+  if (createJSInterface.activePanel && createJSInterface.activePanel.infoHandler) {
+    createJSInterface.activePanel.infoHandler(text);
+    return;
+  }
+
+
   this.doc.debugPanel.visible = true;
   this.doc.debugText.visible = true;
   this.doc.debugText.text  = text;
@@ -2913,8 +2922,10 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     panel = {
       name: name,
       container: new createjs.Container(),
-      listeners: []
+      listeners: [],
+      infoHandler: undefined
     };
+    panel.container.visible = false;
     createJSInterface.panels.push(panel);
     createJSInterface.doc.stage.addChildAt(panel.container, 0);
 
@@ -2930,15 +2941,25 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       else if (item instanceof Command)
         renderCommand(item);
     }
+    presentation._panel = panel;
     presentation._emitEvent('StateChange', 'PanelCreated'); // todo docs & tests
   }
 
   /**
    * Make this panel visible hide others
    */
-  for (i = 0; createJSInterface.panels.length; i++) {
-    createJSInterface.panels[i].container.visible = name == createJSInterface.panels[i].name;
+  for (i = 0; i < createJSInterface.panels.length; i++) {
+    if (name == createJSInterface.panels[i].name) {
+      createJSInterface.activePanel = createJSInterface.panels[i];
+      createJSInterface.panels[i].container.visible = true;
+    }
   }
+  for (i = 0; i < createJSInterface.panels.length; i++) {
+    if (name != createJSInterface.panels[i].name) {
+      createJSInterface.panels[i].container.visible = false;
+    }
+  }
+
   /*******************************************************************************************
    * Local functions
    *******************************************************************************************/
