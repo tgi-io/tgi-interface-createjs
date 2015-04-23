@@ -10,7 +10,7 @@ var root = this;
 var TGI = {
   CORE: function () {
     return {
-      version: '0.3.2',
+      version: '0.3.5',
       Application: Application,
       Attribute: Attribute,
       Command: Command,
@@ -1118,13 +1118,13 @@ Model.prototype.onEvent = function (events, callback) {
   this._eventListeners.push({events: events, callback: callback});
   return this;
 };
-Model.prototype._emitEvent = function (event) {
+Model.prototype._emitEvent = function (event, meta) { // todo meta is app defined - no test for it
   var i;
   for (i in this._eventListeners) {
     if (this._eventListeners.hasOwnProperty(i)) {
       var subscriber = this._eventListeners[i];
       if ((subscriber.events.length && subscriber.events[0] === '*') || contains(subscriber.events, event)) {
-        subscriber.callback.call(this, event);
+        subscriber.callback.call(this, event, meta);
       }
     }
   }
@@ -2930,7 +2930,18 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       else if (item instanceof Command)
         renderCommand(item);
     }
+    presentation._emitEvent('StateChange', 'PanelCreated'); // todo docs & tests
   }
+
+  /**
+   * Make this panel visible hide others
+   */
+  for (i = 0; createJSInterface.panels.length; i++) {
+    createJSInterface.panels[i].container.visible = name == createJSInterface.panels[i].name;
+  }
+  /*******************************************************************************************
+   * Local functions
+   *******************************************************************************************/
   function renderAttribute(attribute) {
     var sourceElement;
     if (attribute.type == 'Object') {
@@ -2960,13 +2971,14 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       } else if (attribute.value.text) {
         sourceElement = renderText(attribute.value.text, attribute.value.location, attribute.value.font, attribute.value.color);
       } else {
-        sourceElement = renderText(JSON.stringify(attribute.value),undefined,'24px Courier');
+        sourceElement = renderText(JSON.stringify(attribute.value), undefined, '24px Courier');
       }
     } else {
       sourceElement = renderText(attribute.value);
     }
     attribute._sourceElement = sourceElement;
   }
+
   function renderCommand(command) {
     var sourceElement;
     if (command.location) {
@@ -2984,6 +2996,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     command._sourceElement = sourceElement;
   }
+
   function renderButton(command, location) {
     try {
       var navButton = panel.container.addChild(new CreateJSInterface._makeButton(createJSInterface, command.name, "#111", command.images, function () {
@@ -3000,6 +3013,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
 
     return navButton;
   }
+
   function newLine() {
     defaultLocation.x = defaultLocation.sx;
     if (largestImageHeight) {
@@ -3007,6 +3021,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       largestImageHeight = 0;
     }
   }
+
   function renderText(label, location, font, color) {
     var myFont = font || "48px Arial";
     var myColor = color || "#000";
@@ -3034,6 +3049,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     return text;
   }
+
   function renderImage(image, location) {
     var bitmap = new createjs.Bitmap(image);
     var isLocked = false;
@@ -3067,6 +3083,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     }
     return bitmap;
   }
+
   function renderSprite(spriteSheet, location, size) {
     var sprite = new createjs.Sprite(spriteSheet);
     if (location) {
@@ -3090,12 +3107,6 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       }
     });
     return sprite;
-  }
-  /**
-   * Make this panel visible hide others
-   */
-  for (i = 0; createJSInterface.panels.length; i++) {
-    createJSInterface.panels[i].container.visible = name == createJSInterface.panels[i].name;
   }
 };
 

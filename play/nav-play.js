@@ -147,10 +147,6 @@ var spritePresentation = new tgi.Presentation();
 //spritePresentation.set('contents', deck);
 
 var reel = new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: 0}});
-var reelSpin = [];
-reelSpin.push(makeImage(res.assets.reels.spinMedium['Full Reel Spin-Regular-MEDIUM_'], {x: 111, y: 111}));
-reelSpin.push(makeImage(res.assets.reels.spinMedium['Full Reel Spin-Regular-MEDIUM_'], {x: 333, y: 333}));
-reelSpin.push(makeImage(res.assets.reels.spinMedium['Full Reel Spin-Regular-MEDIUM_'], {x: 999, y: 999}));
 
 function setListener() {
   if (setListener.once)
@@ -158,10 +154,10 @@ function setListener() {
   setListener.once = true;
   //console.log('var setListener = function () {');
 
-  reel._sourceElement.on('animationend', function (payload) {
-    //console.log('animationend: ' + payload + ', reel._sourceElement.currentFrame ' + reel._sourceElement.currentFrame);
-    reel._sourceElement.stop();
-  });
+  //reel._sourceElement.on('animationend', function (payload) {
+  //  //console.log('animationend: ' + payload + ', reel._sourceElement.currentFrame ' + reel._sourceElement.currentFrame);
+  //  reel._sourceElement.stop();
+  //});
 
 }
 
@@ -179,13 +175,20 @@ spritePresentation.set('contents', [
       reel._sourceElement.stop();
     }
   }),
-  reel,
-  '',
-  reelSpin[0],
-  reelSpin[1],
-  reelSpin[2]
+  reel
 
 ]);
+
+spritePresentation.onEvent('*', function (event, meta) {
+  console.log('Event: ' + event + ' Meta: ' + meta);
+  if (meta == 'PanelCreated') {
+    reel._sourceElement.on('animationend', function (payload) {
+      //console.log('animationend: ' + payload + ', reel._sourceElement.currentFrame ' + reel._sourceElement.currentFrame);
+      reel._sourceElement.stop();
+    });
+  }
+});
+
 
 var spriteCommand = new tgi.Command({
   name: 'Sprite',
