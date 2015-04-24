@@ -6,6 +6,7 @@ var bs = new (TGI.INTERFACE.CREATEJS().CreateJSInterface)({
   vendor: {
     canvasID: 'navCanvas',
     createjs: createjs,
+    navigationOptions: {hide: false},
     resources: res
   }
 });
@@ -48,9 +49,9 @@ lynchPresentation.set('contents', [
   '',
   makeText('you can use google fonts', '48px Lobster', '#040'),
   '',
-  makeText('Text can be aligned left', undefined, '#707', undefined, {x:1920/2, textAlign:'left'}),
-  makeText('Text can be aligned center', undefined, '#077', undefined, {x:1920/2, textAlign:'center'}),
-  makeText('Text can be aligned right', undefined, '#770', undefined, {x:1920/2, textAlign:'right'}),
+  makeText('Text can be aligned left', undefined, '#707', undefined, {x: 1920 / 2, textAlign: 'left'}),
+  makeText('Text can be aligned center', undefined, '#077', undefined, {x: 1920 / 2, textAlign: 'center'}),
+  makeText('Text can be aligned right', undefined, '#770', undefined, {x: 1920 / 2, textAlign: 'right'}),
   '',
   makeText('THINK', '72px Lobster', '#404', {x: 1406, y: 295}),
   makeText('THINK', '72px Lobster', '#84A', {x: 1404, y: 293})
@@ -217,6 +218,11 @@ nav.set('contents', [
  * Start the app
  */
 app.start(function (request) {
+  if (request instanceof tgi.Message) {
+    if (request.type == 'Connected') {
+      bs.dispatch(new tgi.Request({type: 'Command', command: textCommand}));
+      return;
+    }
+  }
   app.info('' + request);
 });
-app.info('nav-play');
