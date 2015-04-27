@@ -144,47 +144,28 @@ var buttonCommand = new tgi.Command({
  * Sprite
  */
 var spritePresentation = new tgi.Presentation();
-//var deck = [];
-//for (var i = 0; i < res.assets.Cards.face.lastFrame; i++)
-//  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Cards.face, frame: i}}));
-//for (i = 0; i < res.assets.Motion.Frame.lastFrame; i++)
-//  deck.push(new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: i}}));
-//
-//spritePresentation.set('contents', deck);
-
-var reel = new tgi.Attribute({name: 'background', type: 'Object', value: {image: res.assets.Motion.Frame, frame: 0}});
-
-function setListener() {
-  if (setListener.once)
-    return;
-  setListener.once = true;
-  //console.log('var setListener = function () {');
-
-  //reel._sourceElement.on('animationend', function (payload) {
-  //  //console.log('animationend: ' + payload + ', reel._sourceElement.currentFrame ' + reel._sourceElement.currentFrame);
-  //  reel._sourceElement.stop();
-  //});
-
-}
-
-spritePresentation.set('contents', [
+var reel = new tgi.Attribute({name: 'sprite', type: 'Object', value: {image: res.assets.Motion.Frame, frame: 0}});
+var spriteContents = [
   'Sprite animations',
   new tgi.Command({
     name: 'play', type: 'Function', contents: function () {
-      setListener();
       reel._sourceElement.gotoAndPlay();
     }
   }),
   new tgi.Command({
     name: 'stop', type: 'Function', contents: function () {
-      setListener();
       reel._sourceElement.stop();
     }
   }),
   reel
-
-]);
-
+];
+for (var i = 0; i < res.assets.Cards.face.lastFrame - 1; i++)
+  spriteContents.push(new tgi.Attribute({
+    name: 'sprite',
+    type: 'Object',
+    value: {image: res.assets.Cards.face, frame: i, location: {x: (i % 13) * 100, y: 333 + 130 * Math.floor(i / 13)}}
+  }));
+spritePresentation.set('contents', spriteContents);
 spritePresentation.onEvent('*', function (event, meta) {
   console.log('Event: ' + event + ' Meta: ' + meta);
   if (meta == 'PanelCreated') {
@@ -197,11 +178,34 @@ spritePresentation.onEvent('*', function (event, meta) {
   }
 });
 
-
 var spriteCommand = new tgi.Command({
   name: 'Sprite',
   type: 'Presentation',
   contents: spritePresentation
+});
+/**
+ * Sound
+ */
+var soundPresentation = new tgi.Presentation();
+var mySoundInstance;
+soundPresentation.set('contents', ['sound']);
+soundPresentation.onEvent('*', function (event, meta) {
+  var snd  = res.assets['M-GameBG'];
+  if (meta == 'PanelActive') {
+    if (!mySoundInstance) {
+      mySoundInstance = createjs.Sound.createInstance(snd.ID);
+    }
+    mySoundInstance.play();
+  }
+  if (meta == 'PanelInactive') {
+    mySoundInstance.stop();
+  }
+
+});
+var soundCommand = new tgi.Command({
+  name: 'Sound',
+  type: 'Presentation',
+  contents: soundPresentation
 });
 
 /**
@@ -211,7 +215,8 @@ nav.set('contents', [
   textCommand,
   imageCommand,
   buttonCommand,
-  spriteCommand
+  spriteCommand,
+  soundCommand
 ]);
 
 /**

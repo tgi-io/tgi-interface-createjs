@@ -2758,6 +2758,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
    * Recursively walk thru resources & create a manifest
    */
   var manifest = [];
+  var soundIDcounter = 1;
   getResourceItems(CreateJSInterface._resources, '');
   function getResourceItems(resources, path) {
     for (var resourceName in resources) {
@@ -2769,7 +2770,12 @@ CreateJSInterface.prototype.createStage = function (callback) {
         } else {
           if (undefined === resource.firstFrame) {
             filePath += '.' + resource._type.toLowerCase();
-            manifest.push({src: filePath, _tgiSource: resource});
+            if (resource._type == 'MP3') {
+              var soundID = 'snd' + soundIDcounter++;
+              resource.ID = soundID;
+              manifest.push({id: soundID, src: filePath, _tgiSource: resource});
+            } else
+              manifest.push({src: filePath, _tgiSource: resource});
           } else {
             resource.element = [];
             for (var i = resource.firstFrame; i <= resource.lastFrame; i++) {
@@ -2795,6 +2801,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   createJSInterface.info(lastProgress + lastFile);
   preload.installPlugin(createjs.Sound);
   preload.on("fileload", function (event) {
+    //console.log('event load ' + event);
     if (undefined !== event.item._tgiFrame)
       event.item._tgiSource.element[event.item._tgiFrame] = event.result;
     else
@@ -2946,7 +2953,8 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       name: name,
       container: new createjs.Container(),
       listeners: [],
-      infoHandler: undefined
+      infoHandler: undefined,
+      presentation: presentation
     };
     panel.container.visible = false;
     createJSInterface.panels.push(panel);
@@ -2974,11 +2982,14 @@ CreateJSInterface.prototype.activatePanel = function (command) {
   for (i = 0; i < createJSInterface.panels.length; i++) {
     if (name == createJSInterface.panels[i].name) {
       createJSInterface.activePanel = createJSInterface.panels[i];
+      createJSInterface.panels[i].presentation._emitEvent('StateChange', 'PanelActive'); // todo docs & tests
       createJSInterface.panels[i].container.visible = true;
     }
   }
   for (i = 0; i < createJSInterface.panels.length; i++) {
     if (name != createJSInterface.panels[i].name) {
+      if (createJSInterface.panels[i].container.visible)
+        createJSInterface.panels[i].presentation._emitEvent('StateChange', 'PanelInactive'); // todo docs & tests
       createJSInterface.panels[i].container.visible = false;
     }
   }
@@ -3142,9 +3153,10 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       sprite.y = location.y;
     } else {
       if (defaultLocation.x + size.width + defaultLocation.dx > canvasWidth) {
-        defaultLocation.x = defaultLocation.sx;
-        defaultLocation.y += (size.height + defaultLocation.dy);
+        newLine();
       }
+      if (largestImageHeight < size.height)
+        largestImageHeight = size.height;
       sprite.x = defaultLocation.x;
       sprite.y = defaultLocation.y;
       defaultLocation.x += (size.width + defaultLocation.dx);
