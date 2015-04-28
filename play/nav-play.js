@@ -115,7 +115,6 @@ buttonPresentation.set('contents', [
   moveText,
   new tgi.Command({
     name: 'move me', type: 'Function', location: {x: 927, y: 251}, contents: function () {
-      console.log('sup foo');
       this._sourceElement.x += 32;
       moveText._sourceElement.x += 32;
     }
@@ -167,10 +166,10 @@ for (var i = 0; i < res.assets.Cards.face.lastFrame - 1; i++)
   }));
 spritePresentation.set('contents', spriteContents);
 spritePresentation.onEvent('*', function (event, meta) {
-  console.log('Event: ' + event + ' Meta: ' + meta);
+  //console.log('Event: ' + event + ' Meta: ' + meta);
   if (meta == 'PanelCreated') {
     spritePresentation._panel.infoHandler = function (text) {
-      console.log('infoHandler: ' + text);
+      //console.log('infoHandler: ' + text);
     };
     reel._sourceElement.on('animationend', function (payload) {
       reel._sourceElement.stop();
