@@ -2716,8 +2716,7 @@ CreateJSInterface.prototype.dispatch = function (request, response) {
 CreateJSInterface.prototype.createStage = function (callback) {
   var createJSInterface = this;
   var createjs = CreateJSInterface._createjs;
-
-  var top,left, height, width;
+  var top, left, height, width;
 
   /**
    * All the world is a stage
@@ -2743,7 +2742,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   this.doc.fpsText = new createjs.Text(" FPS 00 / 00 ", "24px Arial", "#ffff00");
   height = this.doc.fpsText.getMeasuredHeight() + 6;
   width = this.doc.fpsText.getMeasuredWidth() + 6;
-  this.doc.fpsPanel = new createjs.Shape(new createjs.Graphics().beginFill("#777").drawRect(this.doc.stage.canvas.width-width, 0, width, height));
+  this.doc.fpsPanel = new createjs.Shape(new createjs.Graphics().beginFill("#777").drawRect(this.doc.stage.canvas.width - width, 0, width, height));
   this.doc.fpsPanel.alpha = 0.5; // translucent rectangle in back of text
   this.doc.stage.addChild(this.doc.fpsPanel);
   this.doc.fpsText.textAlign = 'right';
@@ -2766,19 +2765,9 @@ CreateJSInterface.prototype.createStage = function (callback) {
   var frameRate = 30;
   createjs.Ticker.setFPS(frameRate);
   createjs.Ticker.addEventListener("tick", function (event) {
-
-    /**
-     * Update FPS info
-     */
-    createJSInterface.doc.fpsText.text = ' FPS ' + Math.floor(createjs.Ticker.getMeasuredFPS()) +' / ' + frameRate +   ' ';
-
-
-
+    createJSInterface.doc.fpsText.text = ' FPS ' + Math.floor(createjs.Ticker.getMeasuredFPS()) + ' / ' + frameRate + ' ';
     createJSInterface.doc.stage.update(event);
   });
-
-  var tic = createjs.Ticker;
-  console.log('Ticker ' + tic);
 
   /**
    * Recursively walk thru resources & create a manifest
@@ -2796,7 +2785,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
         } else {
           if (undefined === resource.firstFrame) {
             filePath += '.' + resource._type.toLowerCase();
-            if (resource._type == 'MP3') {
+            if (resource._type == 'MP3' || resource._type == 'WAV') {
               var soundID = 'snd' + soundIDcounter++;
               resource.ID = soundID;
               manifest.push({id: soundID, src: filePath, _tgiSource: resource});
@@ -2841,7 +2830,6 @@ CreateJSInterface.prototype.createStage = function (callback) {
   });
   preload.on("complete", function (event) {
     createJSInterface.info(lastProgress + ' Assets Loaded');
-    console.log("Finished Loading Assets");
     callback();
   });
   preload.on("error", function (event, err) {
@@ -2994,7 +2982,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
         renderText(item);
       else if (item instanceof Attribute)
         renderAttribute(item);
-      else if (item instanceof Command)
+      else if (item instanceof Command || typeof item == 'function')
         renderCommand(item);
     }
     presentation._panel = panel;
@@ -3059,7 +3047,12 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     attribute._sourceElement = sourceElement;
   }
 
-  function renderCommand(command) {
+  function renderCommand(commandParm) {
+    var command = commandParm;
+    if (typeof commandParm == 'function') {
+      command = new Command({name: commandParm.name, type: 'Function', contents: commandParm});
+    }
+
     var sourceElement;
     if (command.location) {
       sourceElement = renderButton(command, command.location);

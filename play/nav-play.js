@@ -2,7 +2,7 @@
  * tgi-interface-createjs/play/nav-play.js
  */
 var tgi = TGI.CORE();
-var bs = new (TGI.INTERFACE.CREATEJS().CreateJSInterface)({
+var ui = new (TGI.INTERFACE.CREATEJS().CreateJSInterface)({
   vendor: {
     canvasID: 'navCanvas',
     createjs: createjs,
@@ -10,9 +10,9 @@ var bs = new (TGI.INTERFACE.CREATEJS().CreateJSInterface)({
     resources: res
   }
 });
-var app = new tgi.Application({interface: bs});
+var app = new tgi.Application({interface: ui});
 var nav = new tgi.Presentation();
-app.setInterface(bs);
+app.setInterface(ui);
 app.set('brand', 'nav-play');
 app.setPresentation(nav);
 
@@ -182,24 +182,82 @@ var spriteCommand = new tgi.Command({
   type: 'Presentation',
   contents: spritePresentation
 });
+
 /**
  * Sound
  */
+var soundGame, soundLoop1, soundLoop2;
 var soundPresentation = new tgi.Presentation();
-var mySoundInstance;
-soundPresentation.set('contents', ['sound']);
-soundPresentation.onEvent('*', function (event, meta) {
-  var snd  = res.assets['M-GameBG'];
-  if (meta == 'PanelActive') {
-    if (!mySoundInstance) {
-      mySoundInstance = createjs.Sound.createInstance(snd.ID);
-    }
-    mySoundInstance.play();
-  }
-  if (meta == 'PanelInactive') {
-    mySoundInstance.stop();
+var capabilities = makeText("That's what's up");
+soundPresentation.set('contents', [
+  'createjs.Sound.getCapabilities() yields:',
+  capabilities,
+  '',
+  function Play() {
+    soundGame.play();
+  },
+  function Stop() {
+    soundGame.stop();
+  },
+  function VolUp() {
+    var vol = soundGame.getVolume() + .1;
+    if (vol > 1) vol = 1;
+    soundGame.setVolume(vol);
+  },
+  function VolDn() {
+    var vol = soundGame.getVolume() - .1;
+    if (vol < 0) vol = 0;
+    soundGame.setVolume(vol);
+  },
+  function Pause() {
+    soundGame.paused = !soundGame.paused;
+  },
+  '',
+  'Looping Sounds',
+  function Loop1() {
+    soundLoop1.paused = !soundLoop1.paused;
+  },
+  function Loop2() {
+    soundLoop2.paused = !soundLoop2.paused;
   }
 
+]);
+soundPresentation.onEvent('*', function (event, meta) {
+  if (meta == 'PanelActive') {
+    var txt = '';
+    var caps = createjs.Sound.getCapabilities();
+    for (var cap in caps) {
+      if (caps.hasOwnProperty(cap)) {
+        if (typeof caps[cap] == 'boolean') {
+          if (caps[cap])
+            txt += cap + ' ';
+        } else {
+          txt += cap + '(' + caps[cap] + ') ';
+        }
+      }
+    }
+    capabilities._sourceElement.text = txt;
+    // supText._sourceElement.text = 'This button has one image';
+    if (!soundGame) {
+      try {
+        soundGame = createjs.Sound.createInstance(res.assets['M-GameBG'].ID);
+        soundLoop1 = createjs.Sound.createInstance(res.assets.loop1.ID);
+        soundLoop1.loop = -1;
+        soundLoop1.play();
+        soundLoop1.paused = true;
+        soundLoop2 = createjs.Sound.createInstance(res.assets.loop2.ID);
+        soundLoop2.play();
+        soundLoop2.paused = true;
+        soundLoop2.loop = -1;
+      } catch (e) {
+        console.log('wtf ' + e);
+      }
+    }
+    //mySoundInstance.play();
+  }
+  if (meta == 'PanelInactive') {
+    //mySoundInstance.stop();
+  }
 });
 var soundCommand = new tgi.Command({
   name: 'Sound',
@@ -223,8 +281,8 @@ nav.set('contents', [
  */
 app.start(function (request) {
   if (request instanceof tgi.Message) {
-    if (request.type == 'Connected') {
-      bs.dispatch(new tgi.Request({type: 'Command', command: textCommand}));
+    if (request.type == 'Connected') { // todo Connected wtf - need better design on this flow
+      ui.dispatch(new tgi.Request({type: 'Command', command: textCommand}));
       return;
     }
   }

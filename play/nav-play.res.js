@@ -11,7 +11,7 @@ var res = {
       "face": {
         "_type": "PNG",
         "firstFrame": 1,
-        "lastFrame": 3,
+        "lastFrame": 54,
         "zeroPad": 2
       }
     },
@@ -35,7 +35,7 @@ var res = {
       "Frame": {
         "_type": "PNG",
         "firstFrame": 1,
-        "lastFrame": 3,
+        "lastFrame": 27,
         "zeroPad": 2
       }
     },
@@ -52,6 +52,12 @@ var res = {
       "_type": "JPG",
       "firstFrame": 1,
       "lastFrame": 1
+    },
+    "loop1": {
+      "_type": "WAV"
+    },
+    "loop2": {
+      "_type": "WAV"
     },
     "lynch": {
       "_type": "JPG"
