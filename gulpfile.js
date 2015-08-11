@@ -11,17 +11,15 @@ var childProcess = require('child_process');
 
 // Source and _packaging
 var libFiles = [
-  'lib/_packaging/lib-header',
-  'node_modules/tgi-core/dist/tgi.core.chunk.js',
   'lib/tgi-interface-createjs.lib.js',
   'lib/tgi-interface-createjs.source.js',
   'lib/tgi-interface-createjs-stage.source.js',
   'lib/tgi-interface-createjs-navigation.source.js',
   'lib/tgi-interface-createjs-queries.source.js',
   'lib/tgi-interface-createjs-panels.source.js',
-  'lib/tgi-interface-createjs-buttons.source.js',
-  'lib/_packaging/lib-footer'
+  'lib/tgi-interface-createjs-buttons.source.js'
 ];
+var libPackaging = ['lib/_packaging/lib-header'].concat(['node_modules/tgi-core/dist/tgi.core.chunk.js']).concat(libFiles).concat(['lib/_packaging/lib-footer']);
 
 // The Spec
 var specFiles = [
@@ -49,10 +47,9 @@ gulp.task('copyTweenJS', function () {
   return gulp.src(['bower_components/TweenJS/lib/**']).pipe(gulp.dest('dist/TweenJS'));
 });
 
-
 // Build Lib
 gulp.task('_buildLib', function () {
-  return gulp.src(libFiles)
+  return gulp.src(libPackaging)
     .pipe(concat('tgi-interface-createjs.js'))
     .pipe(gulp.dest('dist'))
     .pipe(rename('tgi-interface-createjs.min.js'))

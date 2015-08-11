@@ -2,9 +2,9 @@
 CreateJS Interface http://createjs.com/
 
 # TODO Now
-- fuck with sound
-
-- design sprite animations for reels with _resource.json
+- lib is still not split from core
+- fuck with physics
+- keep shift drag from jumping on first move
 - have gulp make assets with dependency
 
 # TODO Later

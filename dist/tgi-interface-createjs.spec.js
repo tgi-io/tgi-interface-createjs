@@ -730,7 +730,9 @@ spec.test('tgi-core/lib/tgi-core-command.spec.js', 'Command', 'encapsulates task
       });
     });
     spec.heading('images', function () {
-      new Command({name: 'options', location: {up: undefined, down: undefined}});
+      spec.example('optional for control graphical representation', undefined, function () {
+        new Command({name: 'options', images: []});
+      });
     });
     spec.heading('presentationMode', function () {
       spec.paragraph('this property is used for presentation commands to specify the mode of presentation');
@@ -894,7 +896,7 @@ spec.test('tgi-core/lib/tgi-core-command.spec.js', 'Command', 'encapsulates task
     });
 
     // Menu todo - placeholder or not needed?
-    spec.example('Menu', Error('command type Menu not implemented'), function () {
+    spec.xexample('Menu', Error('command type Menu not implemented'), function () {
       var cmd = new Command({
         name: 'menuCommand',
         description: 'menu command test',
