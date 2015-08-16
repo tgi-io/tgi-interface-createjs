@@ -45,6 +45,16 @@
     return makeDisplayObject('ImageObject', {image: resource, location: location});
   }
 
+  function disableButton(btn){
+    btn._sourceElement.alpha = 0.5;
+    btn._sourceElement._disabled = true;
+  }
+  function enabledButton(btn){
+    btn._sourceElement.alpha = 1;
+    btn._sourceElement._disabled = false;
+  }
+
+
   /**
    * Text
    */
@@ -115,7 +125,23 @@
    */
   var buttonPresentation = new tgi.Presentation();
   var moveText = makeText('Location can be used of course as follows: ');
-  var supText = makeText("That's what's up");
+  var supText = makeText(" ");
+  var btn1 = new tgi.Command({
+    name: 'click here', type: 'Function', contents: function () {
+      supText._sourceElement.text = 'This button has no image';
+    }
+  });
+  var btn2 = new tgi.Command({
+    images: res.assets.PressMe, type: 'Function', contents: function () {
+      supText._sourceElement.text = 'This button has one image';
+    }
+  });
+  var btn3 = new tgi.Command({
+    images: [res.assets.Play_up, res.assets.Play_down], type: 'Function', contents: function () {
+      supText._sourceElement.text = 'This button has TWO images';
+    }
+  });
+
   buttonPresentation.set('contents', [
     'Buttons can be simple text buttons',
     new tgi.Command({
@@ -137,17 +163,26 @@
     }),
     '',
     'And you can have graphic buttons click em for more info',
+    btn1,
+    btn2,
+    btn3,
+    supText,
+    ' ',
+    'buttons can be ...',
     new tgi.Command({
-      images: res.assets.PressMe, type: 'Function', contents: function () {
-        supText._sourceElement.text = 'This button has one image';
+      name: 'disabled', type: 'Function', contents: function () {
+        disableButton(btn1);
+        disableButton(btn2);
+        disableButton(btn3);
       }
     }),
     new tgi.Command({
-      images: [res.assets.Play_up, res.assets.Play_down], type: 'Function', contents: function () {
-        supText._sourceElement.text = 'This button has TWO images';
+      name: 'enabled', type: 'Function', contents: function () {
+        enabledButton(btn1);
+        enabledButton(btn2);
+        enabledButton(btn3);
       }
-    }),
-    supText
+    })
   ]);
   var buttonCommand = new tgi.Command({
     name: 'Button',

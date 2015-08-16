@@ -640,6 +640,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
 
     button.mouseChildren = false;
     button.on("click", function (event) {
+      if (button._disabled) return;
       try {
         button._tgiCallback();
       } catch (e) {
@@ -647,6 +648,7 @@ CreateJSInterface.prototype.activatePanel = function (command) {
       }
     });
     button.on("mousedown", function (event) {
+      if (button._disabled) return;
       button._pressed = false;
       button._shiftPressed = false;
       button._moved = false;
