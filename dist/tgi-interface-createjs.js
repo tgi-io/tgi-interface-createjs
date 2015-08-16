@@ -2618,7 +2618,7 @@ var cpad = function (expr, length, fillChar) {
 TGI.INTERFACE = TGI.INTERFACE || {};
 TGI.INTERFACE.CREATEJS = function () {
   return {
-    version: '0.0.1',
+    version: '0.0.13',
     CreateJSInterface: CreateJSInterface
   };
 };

@@ -64,13 +64,20 @@ gulp.task('_buildSpec', function () {
     .pipe(gulp.dest('dist'));
 });
 
+// Build Lib Chunk
+gulp.task('_buildLibChunk', function () {
+  return gulp.src(libFiles)
+    .pipe(concat('tgi.interface.createjs.chunk.js'))
+    .pipe(gulp.dest('dist'));
+});
+
 // Build Task
-gulp.task('build', ['_buildLib', '_buildSpec'], function (callback) {
+gulp.task('build', ['_buildLibChunk', '_buildLib', '_buildSpec'], function (callback) {
   callback();
 });
 
 // Lint Lib
-gulp.task('_lintLib', ['_buildLib'], function (callback) {
+gulp.task('_lintLib', ['_buildLibChunk', '_buildLib'], function (callback) {
   return gulp.src('dist/tgi.core.js')
     .pipe(jshint())
     .pipe(jshint.reporter('jshint-stylish'))
