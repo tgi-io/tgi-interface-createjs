@@ -2618,7 +2618,7 @@ var cpad = function (expr, length, fillChar) {
 TGI.INTERFACE = TGI.INTERFACE || {};
 TGI.INTERFACE.CREATEJS = function () {
   return {
-    version: '0.0.13',
+    version: '0.0.16',
     CreateJSInterface: CreateJSInterface
   };
 };
@@ -3172,6 +3172,10 @@ CreateJSInterface.prototype.activatePanel = function (command) {
     if (location) {
       sprite.x = location.x;
       sprite.y = location.y;
+      if (location.scaleX)
+        sprite.scaleX = location.scaleX;
+      if (location.scaleY)
+        sprite.scaleY = location.scaleY;
     } else {
       if (defaultLocation.x + size.width + defaultLocation.dx > canvasWidth) {
         newLine();

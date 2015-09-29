@@ -2,6 +2,7 @@
 CreateJS Interface http://createjs.com/
 
 # TODO Now
+- sounds ending with numbers get turned into broken folders
 - lib is still not split from core
 - fuck with physics
 - keep shift drag from jumping on first move
