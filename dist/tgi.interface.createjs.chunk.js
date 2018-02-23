@@ -110,7 +110,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   /**
    * All the world is a stage
    */
-  this.doc.stage = new createjs.StageGL(this.vendor.canvasID);
+  this.doc.stage = new createjs.Stage(this.vendor.canvasID);
 
   /**
    * Debug text (info default)
@@ -165,11 +165,12 @@ CreateJSInterface.prototype.createStage = function (callback) {
   var manifest = [];
   var soundIDcounter = 1;
   getResourceItems(CreateJSInterface._resources, '');
+
   function getResourceItems(resources, path) {
     for (var resourceName in resources) {
       if (resources.hasOwnProperty(resourceName) && resourceName[0] != '_') {
         var resource = resources[resourceName];
-        var filePath = (path ? path + '/' : '' ) + resourceName;
+        var filePath = (path ? path + '/' : '') + resourceName;
         if (resource._type == 'Folder') {
           getResourceItems(resource, filePath);
         } else {
