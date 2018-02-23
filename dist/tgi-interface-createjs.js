@@ -2724,7 +2724,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   /**
    * All the world is a stage
    */
-  this.doc.stage = new createjs.Stage(this.vendor.canvasID);
+  this.doc.stage = new createjs.StageGL(this.vendor.canvasID);
 
   /**
    * Debug text (info default)
@@ -2766,7 +2766,8 @@ CreateJSInterface.prototype.createStage = function (callback) {
    * Ticker update method
    */
   var frameRate = 30;
-  createjs.Ticker.setFPS(frameRate);
+  // createjs.Ticker.setFPS(frameRate);
+  createjs.Ticker.framerate = 30;
   createjs.Ticker.addEventListener("tick", function (event) {
     createJSInterface.doc.fpsText.text = ' FPS ' + Math.floor(createjs.Ticker.getMeasuredFPS()) + ' / ' + frameRate + ' ';
     createJSInterface.doc.stage.update(event);

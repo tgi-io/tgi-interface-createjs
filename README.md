@@ -1,6 +1,8 @@
 # tgi-interface-createjs
 CreateJS Interface http://createjs.com/
 
+- updated to createjs.min.js 1.0.1
+
 # TODO Now
 - sounds ending with numbers get turned into broken folders
 - lib is still not split from core

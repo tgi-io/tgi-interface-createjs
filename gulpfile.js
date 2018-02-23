@@ -30,23 +30,6 @@ var specFiles = [
   'lib/_packaging/spec-footer'
 ];
 
-// Copy EaselJS
-gulp.task('copyEaselJS', function () {
-  return gulp.src(['bower_components/EaselJS/lib/**']).pipe(gulp.dest('dist/EaselJS'));
-});
-// Copy PreloadJS
-gulp.task('copyPreloadJS', function () {
-  return gulp.src(['bower_components/PreloadJS/lib/**']).pipe(gulp.dest('dist/PreloadJS'));
-});
-// Copy SoundJS
-gulp.task('copySoundJS', function () {
-  return gulp.src(['bower_components/SoundJS/lib/**']).pipe(gulp.dest('dist/SoundJS'));
-});
-// Copy TweenJS
-gulp.task('copyTweenJS', function () {
-  return gulp.src(['bower_components/TweenJS/lib/**']).pipe(gulp.dest('dist/TweenJS'));
-});
-
 // Build Lib
 gulp.task('_buildLib', function () {
   return gulp.src(libPackaging)
@@ -125,5 +108,5 @@ gulp.task('spec', ['lint'], function (callback) {
 });
 
 // Default & Travis CI Task
-gulp.task('default', ['copyEaselJS', 'copyPreloadJS', 'copySoundJS', 'copyTweenJS', 'test']);
-gulp.task('travis', ['test']);
+gulp.task('default', ['build']);
+gulp.task('travis', ['build']);
