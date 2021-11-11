@@ -2635,8 +2635,9 @@ var CreateJSInterface = function (args) {
   args.name = args.name || '(unnamed)';
   args.description = args.description || 'a CreateJSInterface';
   args.vendor = args.vendor || null;
+  args.fps = args.fps || 30;
   var i;
-  var unusedProperties = getInvalidProperties(args, ['name', 'description', 'vendor']);
+  var unusedProperties = getInvalidProperties(args, ['name', 'description', 'vendor', 'fps']);
   var errorList = [];
   for (i = 0; i < unusedProperties.length; i++) errorList.push('invalid property: ' + unusedProperties[i]);
   if (errorList.length > 1)
@@ -2765,9 +2766,10 @@ CreateJSInterface.prototype.createStage = function (callback) {
   /**
    * Ticker update method
    */
-  var frameRate = 30;
-  // createjs.Ticker.setFPS(frameRate);
-  createjs.Ticker.framerate = 30;
+  var frameRate = this.vendor.fps;
+  console.log('frameRate '+frameRate);
+  createjs.Ticker.setFPS(frameRate);
+  createjs.Ticker.framerate = frameRate;
   createjs.Ticker.addEventListener("tick", function (event) {
     createJSInterface.doc.fpsText.text = ' FPS ' + Math.floor(createjs.Ticker.getMeasuredFPS()) + ' / ' + frameRate + ' ';
     createJSInterface.doc.stage.update(event);

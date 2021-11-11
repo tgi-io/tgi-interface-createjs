@@ -8,6 +8,7 @@
     vendor: {
       canvasID: 'navCanvas',
       createjs: createjs,
+      fps: 10,
       navigationOptions: {hide: false},
       resources: res
     }
