@@ -152,7 +152,7 @@ CreateJSInterface.prototype.createStage = function (callback) {
   /**
    * Ticker update method
    */
-  var frameRate = this.vendor.fps;
+  var frameRate = this.vendor.fps || 30;
   console.log('frameRate '+frameRate);
   createjs.Ticker.setFPS(frameRate);
   createjs.Ticker.framerate = frameRate;
